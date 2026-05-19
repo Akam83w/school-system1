@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1d4ed8"/>
+      <stop offset="100%" style="stop-color:#1e3a8a"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="100" fill="url(#bg)"/>
+  <!-- School building body -->
+  <rect x="96" y="256" width="320" height="200" rx="10" fill="white" fill-opacity="0.95"/>
+  <!-- Roof triangle -->
+  <polygon points="256,88 58,256 454,256" fill="white"/>
+  <!-- Door -->
+  <rect x="208" y="344" width="96" height="112" rx="10" fill="#1d4ed8"/>
+  <!-- Door knob -->
+  <circle cx="295" cy="404" r="6" fill="white" fill-opacity="0.6"/>
+  <!-- Left window -->
+  <rect x="120" y="282" width="64" height="52" rx="6" fill="#bfdbfe"/>
+  <line x1="152" y1="282" x2="152" y2="334" stroke="#93c5fd" stroke-width="2"/>
+  <line x1="120" y1="308" x2="184" y2="308" stroke="#93c5fd" stroke-width="2"/>
+  <!-- Right window -->
+  <rect x="328" y="282" width="64" height="52" rx="6" fill="#bfdbfe"/>
+  <line x1="360" y1="282" x2="360" y2="334" stroke="#93c5fd" stroke-width="2"/>
+  <line x1="328" y1="308" x2="392" y2="308" stroke="#93c5fd" stroke-width="2"/>
+  <!-- Flag pole -->
+  <rect x="251" y="40" width="10" height="56" fill="#f59e0b"/>
+  <!-- Flag -->
+  <polygon points="261,40 316,54 261,68" fill="#f59e0b"/>
+  <!-- Steps -->
+  <rect x="188" y="448" width="136" height="8" rx="2" fill="white" fill-opacity="0.4"/>
+</svg>
