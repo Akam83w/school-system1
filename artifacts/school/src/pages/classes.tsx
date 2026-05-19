@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { Layout } from "@/components/layout";
 import {
   useListClasses,
@@ -62,40 +63,71 @@ export default function ClassesPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {isLoading ? [...Array(6)].map((_, i) => <div key={i} className="rounded-xl h-36 bg-muted animate-pulse" />) :
             (classes ?? []).map((c) => (
-              <div key={c.id} className="bg-card rounded-xl border border-card-border p-5 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="font-bold text-foreground">{c.grade} - {c.name}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">{c.academicYear}</p>
-                  </div>
-                  <div className="flex gap-1.5">
-                    <button onClick={() => openEdit(c)} className="text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 font-medium">تعديل</button>
-                    <button onClick={() => { if (confirm("حذف هذا الصف؟")) deleteMutation.mutate({ id: c.id }); }} className="text-xs px-2 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100 font-medium">حذف</button>
-                  </div>
-                </div>
-                <div className="space-y-1.5 text-sm">
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>المعلم المسؤول</span>
-                    <span className="font-medium text-foreground">{c.teacherName}</span>
-                  </div>
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>عدد الطلاب</span>
-                    <span className="font-medium text-foreground">{c.studentCount} / {c.capacity}</span>
-                  </div>
-                  {c.room && (
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>الغرفة</span>
-                      <span className="font-medium text-foreground">{c.room}</span>
+              <div key={c.id} className="relative group bg-card rounded-xl border border-card-border shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-200">
+                {/* Clickable overlay — full card except action buttons */}
+                <Link href={`/classes/${c.id}`} className="absolute inset-0 rounded-xl z-0" aria-label={`عرض تفاصيل ${c.grade} - ${c.name}`} />
+
+                <div className="relative z-10 p-5 pointer-events-none">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                          {c.name}
+                        </div>
+                        <h3 className="font-bold text-foreground">{c.grade}</h3>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{c.academicYear}</p>
                     </div>
-                  )}
-                </div>
-                {/* capacity bar */}
-                <div className="mt-3">
-                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary rounded-full transition-all"
-                      style={{ width: `${Math.min(100, (c.studentCount / c.capacity) * 100)}%` }}
-                    />
+                    {/* Action buttons must be pointer-events-auto to work above overlay */}
+                    <div className="flex gap-1.5 pointer-events-auto">
+                      <button
+                        onClick={(e) => { e.preventDefault(); openEdit(c); }}
+                        className="text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 font-medium"
+                      >
+                        تعديل
+                      </button>
+                      <button
+                        onClick={(e) => { e.preventDefault(); if (confirm("حذف هذا الصف؟")) deleteMutation.mutate({ id: c.id }); }}
+                        className="text-xs px-2 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100 font-medium"
+                      >
+                        حذف
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 text-sm">
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>المعلم المسؤول</span>
+                      <span className="font-medium text-foreground">{c.teacherName}</span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>عدد الطلاب</span>
+                      <span className="font-medium text-foreground">{c.studentCount} / {c.capacity}</span>
+                    </div>
+                    {c.room && (
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>الغرفة</span>
+                        <span className="font-medium text-foreground">{c.room}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Capacity bar */}
+                  <div className="mt-3">
+                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary rounded-full transition-all"
+                        style={{ width: `${Math.min(100, (c.studentCount / c.capacity) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* "View details" hint on hover */}
+                  <div className="mt-2.5 flex items-center gap-1 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    <span>عرض التفاصيل</span>
                   </div>
                 </div>
               </div>
