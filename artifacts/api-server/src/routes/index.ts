@@ -8,6 +8,7 @@ import subjectsRouter from "./subjects";
 import attendanceRouter from "./attendance";
 import gradesRouter from "./grades";
 import dashboardRouter from "./dashboard";
+import auditLogsRouter from "./audit-logs";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(subjectsRouter);
 router.use(attendanceRouter);
 router.use(gradesRouter);
 router.use(dashboardRouter);
+router.use(auditLogsRouter);
 
 export default router;

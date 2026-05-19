@@ -2,12 +2,13 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { classesTable, teachersTable, studentsTable } from "@workspace/db";
 import { eq, count } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, requireAdmin, type AuthUser } from "../middlewares/auth";
+import { logAudit } from "../lib/audit";
 
 const router = Router();
-router.use(requireAuth);
 
-router.get("/classes", async (req, res) => {
+// GET /classes — all authenticated roles
+router.get("/classes", requireAuth, async (req, res) => {
   const rows = await db
     .select({
       id: classesTable.id,
@@ -34,7 +35,9 @@ router.get("/classes", async (req, res) => {
   res.json(result);
 });
 
-router.post("/classes", async (req, res) => {
+// POST /classes — admin only
+router.post("/classes", requireAuth, requireAdmin, async (req, res) => {
+  const user = (req as any).user as AuthUser;
   const { name, grade, teacherId, capacity, academicYear, room } = req.body;
   const [row] = await db.insert(classesTable).values({
     name,
@@ -45,10 +48,12 @@ router.post("/classes", async (req, res) => {
     room: room ?? null,
   }).returning();
   const [teacher] = await db.select({ fullName: teachersTable.fullName }).from(teachersTable).where(eq(teachersTable.id, row.teacherId));
+  await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "create", entity: "class", entityId: row.id, afterData: row });
   res.status(201).json({ ...row, teacherName: teacher?.fullName ?? "", studentCount: 0 });
 });
 
-router.get("/classes/:id", async (req, res) => {
+// GET /classes/:id — all authenticated roles
+router.get("/classes/:id", requireAuth, async (req, res) => {
   const [row] = await db
     .select({
       id: classesTable.id,
@@ -68,7 +73,11 @@ router.get("/classes/:id", async (req, res) => {
   res.json({ ...row, teacherName: row.teacherName ?? "", studentCount: cnt?.count ?? 0 });
 });
 
-router.patch("/classes/:id", async (req, res) => {
+// PATCH /classes/:id — admin only
+router.patch("/classes/:id", requireAuth, requireAdmin, async (req, res) => {
+  const user = (req as any).user as AuthUser;
+  const [before] = await db.select().from(classesTable).where(eq(classesTable.id, Number(req.params.id)));
+  if (!before) { res.status(404).json({ error: "الصف غير موجود" }); return; }
   const { name, grade, teacherId, capacity, academicYear, room } = req.body;
   const updates: any = {};
   if (name !== undefined) updates.name = name;
@@ -81,11 +90,18 @@ router.patch("/classes/:id", async (req, res) => {
   if (!row) { res.status(404).json({ error: "الصف غير موجود" }); return; }
   const [teacher] = await db.select({ fullName: teachersTable.fullName }).from(teachersTable).where(eq(teachersTable.id, row.teacherId));
   const [cnt] = await db.select({ count: count() }).from(studentsTable).where(eq(studentsTable.classId, row.id));
+  await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "update", entity: "class", entityId: row.id, beforeData: before, afterData: row });
   res.json({ ...row, teacherName: teacher?.fullName ?? "", studentCount: cnt?.count ?? 0 });
 });
 
-router.delete("/classes/:id", async (req, res) => {
+// DELETE /classes/:id — admin only
+router.delete("/classes/:id", requireAuth, requireAdmin, async (req, res) => {
+  const user = (req as any).user as AuthUser;
+  const [before] = await db.select().from(classesTable).where(eq(classesTable.id, Number(req.params.id)));
   await db.delete(classesTable).where(eq(classesTable.id, Number(req.params.id)));
+  if (before) {
+    await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "delete", entity: "class", entityId: before.id, beforeData: before });
+  }
   res.status(204).end();
 });
 

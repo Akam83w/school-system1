@@ -2,12 +2,13 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { attendanceTable, studentsTable, classesTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, requireTeacherOrAdmin, requireAdmin, type AuthUser } from "../middlewares/auth";
+import { logAudit } from "../lib/audit";
 
 const router = Router();
-router.use(requireAuth);
 
-router.get("/attendance", async (req, res) => {
+// GET /attendance — all authenticated roles
+router.get("/attendance", requireAuth, async (req, res) => {
   const { classId, studentId, date } = req.query;
   const conditions: any[] = [];
   if (classId) conditions.push(eq(attendanceTable.classId, Number(classId)));
@@ -33,7 +34,9 @@ router.get("/attendance", async (req, res) => {
   res.json(rows.map(r => ({ ...r, studentName: r.studentName ?? "", className: r.className ?? "" })));
 });
 
-router.post("/attendance", async (req, res) => {
+// POST /attendance — teacher + admin
+router.post("/attendance", requireAuth, requireTeacherOrAdmin, async (req, res) => {
+  const user = (req as any).user as AuthUser;
   const { studentId, classId, date, status, notes } = req.body;
   const [row] = await db.insert(attendanceTable).values({
     studentId: Number(studentId),
@@ -44,10 +47,15 @@ router.post("/attendance", async (req, res) => {
   }).returning();
   const [student] = await db.select({ fullName: studentsTable.fullName }).from(studentsTable).where(eq(studentsTable.id, row.studentId));
   const [cls] = await db.select({ name: classesTable.name }).from(classesTable).where(eq(classesTable.id, row.classId));
+  await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "create", entity: "attendance", entityId: row.id, afterData: { ...row, studentName: student?.fullName } });
   res.status(201).json({ ...row, studentName: student?.fullName ?? "", className: cls?.name ?? "" });
 });
 
-router.patch("/attendance/:id", async (req, res) => {
+// PATCH /attendance/:id — teacher + admin
+router.patch("/attendance/:id", requireAuth, requireTeacherOrAdmin, async (req, res) => {
+  const user = (req as any).user as AuthUser;
+  const [before] = await db.select().from(attendanceTable).where(eq(attendanceTable.id, Number(req.params.id)));
+  if (!before) { res.status(404).json({ error: "السجل غير موجود" }); return; }
   const { status, notes } = req.body;
   const updates: any = {};
   if (status !== undefined) updates.status = status;
@@ -56,7 +64,19 @@ router.patch("/attendance/:id", async (req, res) => {
   if (!row) { res.status(404).json({ error: "السجل غير موجود" }); return; }
   const [student] = await db.select({ fullName: studentsTable.fullName }).from(studentsTable).where(eq(studentsTable.id, row.studentId));
   const [cls] = await db.select({ name: classesTable.name }).from(classesTable).where(eq(classesTable.id, row.classId));
+  await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "update", entity: "attendance", entityId: row.id, beforeData: before, afterData: row });
   res.json({ ...row, studentName: student?.fullName ?? "", className: cls?.name ?? "" });
+});
+
+// DELETE /attendance/:id — admin only
+router.delete("/attendance/:id", requireAuth, requireAdmin, async (req, res) => {
+  const user = (req as any).user as AuthUser;
+  const [before] = await db.select().from(attendanceTable).where(eq(attendanceTable.id, Number(req.params.id)));
+  await db.delete(attendanceTable).where(eq(attendanceTable.id, Number(req.params.id)));
+  if (before) {
+    await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "delete", entity: "attendance", entityId: before.id, beforeData: before });
+  }
+  res.status(204).end();
 });
 
 export default router;

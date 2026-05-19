@@ -2,12 +2,13 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { gradesTable, studentsTable, subjectsTable, classesTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, requireTeacherOrAdmin, requireAdmin, type AuthUser } from "../middlewares/auth";
+import { logAudit } from "../lib/audit";
 
 const router = Router();
-router.use(requireAuth);
 
-router.get("/grades", async (req, res) => {
+// GET /grades — all authenticated roles
+router.get("/grades", requireAuth, async (req, res) => {
   const { studentId, classId, subjectId } = req.query;
   const conditions: any[] = [];
   if (studentId) conditions.push(eq(gradesTable.studentId, Number(studentId)));
@@ -45,7 +46,9 @@ router.get("/grades", async (req, res) => {
   })));
 });
 
-router.post("/grades", async (req, res) => {
+// POST /grades — teacher + admin
+router.post("/grades", requireAuth, requireTeacherOrAdmin, async (req, res) => {
+  const user = (req as any).user as AuthUser;
   const { studentId, subjectId, classId, score, maxScore, examType, examDate, notes } = req.body;
   const [row] = await db.insert(gradesTable).values({
     studentId: Number(studentId),
@@ -60,10 +63,15 @@ router.post("/grades", async (req, res) => {
   const [student] = await db.select({ fullName: studentsTable.fullName }).from(studentsTable).where(eq(studentsTable.id, row.studentId));
   const [subject] = await db.select({ name: subjectsTable.name }).from(subjectsTable).where(eq(subjectsTable.id, row.subjectId));
   const [cls] = await db.select({ name: classesTable.name }).from(classesTable).where(eq(classesTable.id, row.classId));
+  await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "create", entity: "grade", entityId: row.id, afterData: { ...row, studentName: student?.fullName, subjectName: subject?.name } });
   res.status(201).json({ ...row, studentName: student?.fullName ?? "", subjectName: subject?.name ?? "", className: cls?.name ?? "", score: Number(row.score), maxScore: Number(row.maxScore) });
 });
 
-router.patch("/grades/:id", async (req, res) => {
+// PATCH /grades/:id — teacher + admin
+router.patch("/grades/:id", requireAuth, requireTeacherOrAdmin, async (req, res) => {
+  const user = (req as any).user as AuthUser;
+  const [before] = await db.select().from(gradesTable).where(eq(gradesTable.id, Number(req.params.id)));
+  if (!before) { res.status(404).json({ error: "الدرجة غير موجودة" }); return; }
   const { score, maxScore, examType, examDate, notes } = req.body;
   const updates: any = {};
   if (score !== undefined) updates.score = String(score);
@@ -76,11 +84,18 @@ router.patch("/grades/:id", async (req, res) => {
   const [student] = await db.select({ fullName: studentsTable.fullName }).from(studentsTable).where(eq(studentsTable.id, row.studentId));
   const [subject] = await db.select({ name: subjectsTable.name }).from(subjectsTable).where(eq(subjectsTable.id, row.subjectId));
   const [cls] = await db.select({ name: classesTable.name }).from(classesTable).where(eq(classesTable.id, row.classId));
+  await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "update", entity: "grade", entityId: row.id, beforeData: before, afterData: row });
   res.json({ ...row, studentName: student?.fullName ?? "", subjectName: subject?.name ?? "", className: cls?.name ?? "", score: Number(row.score), maxScore: Number(row.maxScore) });
 });
 
-router.delete("/grades/:id", async (req, res) => {
+// DELETE /grades/:id — admin only
+router.delete("/grades/:id", requireAuth, requireAdmin, async (req, res) => {
+  const user = (req as any).user as AuthUser;
+  const [before] = await db.select().from(gradesTable).where(eq(gradesTable.id, Number(req.params.id)));
   await db.delete(gradesTable).where(eq(gradesTable.id, Number(req.params.id)));
+  if (before) {
+    await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "delete", entity: "grade", entityId: before.id, beforeData: before });
+  }
   res.status(204).end();
 });
 

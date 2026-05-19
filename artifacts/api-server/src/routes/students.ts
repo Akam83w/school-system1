@@ -2,12 +2,10 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { studentsTable, classesTable } from "@workspace/db";
 import { eq, ilike, and, or } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, requireAdmin, type AuthUser } from "../middlewares/auth";
+import { logAudit } from "../lib/audit";
 
 const router = Router();
-router.use(requireAuth);
-
-let studentCounter = 1000;
 
 async function getNextCode() {
   const all = await db.select({ code: studentsTable.studentCode }).from(studentsTable);
@@ -16,7 +14,8 @@ async function getNextCode() {
   return `STU${max + 1}`;
 }
 
-router.get("/students", async (req, res) => {
+// GET /students — admin + teacher
+router.get("/students", requireAuth, async (req, res) => {
   const { classId, search } = req.query;
   const rows = await db
     .select({
@@ -48,13 +47,15 @@ router.get("/students", async (req, res) => {
   res.json(rows.map(r => ({ ...r, className: r.className ?? "" })));
 });
 
-router.post("/students", async (req, res) => {
+// POST /students — admin only
+router.post("/students", requireAuth, requireAdmin, async (req, res) => {
+  const user = (req as any).user as AuthUser;
   const { fullName, classId, gender, dateOfBirth, phone, parentName, parentPhone, address, status } = req.body;
   const studentCode = await getNextCode();
   const [row] = await db.insert(studentsTable).values({
     studentCode,
     fullName,
-    classId: Number(classId),
+    classId: classId ? Number(classId) : null,
     gender,
     dateOfBirth,
     enrollmentDate: new Date().toISOString().split("T")[0],
@@ -67,10 +68,12 @@ router.post("/students", async (req, res) => {
   const [cls] = row.classId != null
     ? await db.select({ name: classesTable.name }).from(classesTable).where(eq(classesTable.id, row.classId))
     : [];
+  await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "create", entity: "student", entityId: row.id, afterData: row });
   res.status(201).json({ ...row, className: cls?.name ?? "" });
 });
 
-router.get("/students/:id", async (req, res) => {
+// GET /students/:id — admin + teacher
+router.get("/students/:id", requireAuth, async (req, res) => {
   const [row] = await db
     .select({
       id: studentsTable.id,
@@ -94,7 +97,11 @@ router.get("/students/:id", async (req, res) => {
   res.json({ ...row, className: row.className ?? "" });
 });
 
-router.patch("/students/:id", async (req, res) => {
+// PATCH /students/:id — admin only
+router.patch("/students/:id", requireAuth, requireAdmin, async (req, res) => {
+  const user = (req as any).user as AuthUser;
+  const [before] = await db.select().from(studentsTable).where(eq(studentsTable.id, Number(req.params.id)));
+  if (!before) { res.status(404).json({ error: "الطالب غير موجود" }); return; }
   const { fullName, classId, gender, dateOfBirth, phone, parentName, parentPhone, address, status } = req.body;
   const updates: any = {};
   if (fullName !== undefined) updates.fullName = fullName;
@@ -111,11 +118,18 @@ router.patch("/students/:id", async (req, res) => {
   const [cls] = row.classId != null
     ? await db.select({ name: classesTable.name }).from(classesTable).where(eq(classesTable.id, row.classId))
     : [];
+  await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "update", entity: "student", entityId: row.id, beforeData: before, afterData: row });
   res.json({ ...row, className: cls?.name ?? "" });
 });
 
-router.delete("/students/:id", async (req, res) => {
+// DELETE /students/:id — admin only
+router.delete("/students/:id", requireAuth, requireAdmin, async (req, res) => {
+  const user = (req as any).user as AuthUser;
+  const [before] = await db.select().from(studentsTable).where(eq(studentsTable.id, Number(req.params.id)));
   await db.delete(studentsTable).where(eq(studentsTable.id, Number(req.params.id)));
+  if (before) {
+    await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "delete", entity: "student", entityId: before.id, beforeData: before });
+  }
   res.status(204).end();
 });
 

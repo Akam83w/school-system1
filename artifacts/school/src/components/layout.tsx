@@ -1,25 +1,37 @@
 import { Link, useLocation } from "wouter";
-import { useLogout } from "@workspace/api-client-react";
+import { useLogout, useGetMe } from "@workspace/api-client-react";
 import { clearToken } from "@/lib/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/dashboard", label: "لوحة التحكم", icon: "📊" },
-  { href: "/students", label: "الطلاب", icon: "🎓" },
-  { href: "/teachers", label: "المعلمون", icon: "👩‍🏫" },
-  { href: "/classes", label: "الصفوف", icon: "🏫" },
-  { href: "/subjects", label: "المواد", icon: "📚" },
-  { href: "/attendance", label: "الحضور والغياب", icon: "✅" },
-  { href: "/grades", label: "الدرجات", icon: "📝" },
+  { href: "/dashboard", label: "لوحة التحكم", icon: "📊", roles: ["admin", "teacher", "student"] },
+  { href: "/students", label: "الطلاب", icon: "🎓", roles: ["admin", "teacher"] },
+  { href: "/teachers", label: "المعلمون", icon: "👩‍🏫", roles: ["admin", "teacher"] },
+  { href: "/classes", label: "الصفوف", icon: "🏫", roles: ["admin", "teacher", "student"] },
+  { href: "/subjects", label: "المواد", icon: "📚", roles: ["admin", "teacher", "student"] },
+  { href: "/attendance", label: "الحضور والغياب", icon: "✅", roles: ["admin", "teacher", "student"] },
+  { href: "/grades", label: "الدرجات", icon: "📝", roles: ["admin", "teacher", "student"] },
+  { href: "/audit-logs", label: "سجل الأحداث", icon: "🔍", roles: ["admin"] },
 ];
+
+const ROLE_LABELS: Record<string, { label: string; color: string }> = {
+  admin: { label: "مدير", color: "bg-amber-500/20 text-amber-300" },
+  teacher: { label: "معلم", color: "bg-blue-500/20 text-blue-300" },
+  student: { label: "طالب", color: "bg-green-500/20 text-green-300" },
+};
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const queryClient = useQueryClient();
   const logoutMutation = useLogout();
+  const { data: me } = useGetMe();
+
+  const currentRole = (me as any)?.role ?? "";
+  const currentName = (me as any)?.name ?? "";
+  const roleMeta = ROLE_LABELS[currentRole];
 
   useEffect(() => {
     setMobileOpen(false);
@@ -31,6 +43,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     queryClient.clear();
     window.location.href = "/login";
   }
+
+  const visibleNav = navItems.filter(item => item.roles.includes(currentRole));
 
   return (
     <div className="flex min-h-screen bg-background font-sans" dir="rtl">
@@ -55,7 +69,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
           <p className="text-xs font-semibold text-sidebar-foreground/40 px-3 mb-2 uppercase tracking-widest">القائمة الرئيسية</p>
-          {navItems.map((item) => {
+          {visibleNav.map((item) => {
             const active = location.startsWith(item.href);
             return (
               <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}>
@@ -77,7 +91,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Footer */}
-        <div className="px-3 py-4 border-t border-sidebar-border">
+        <div className="px-3 py-4 border-t border-sidebar-border space-y-2">
+          {currentName && (
+            <div className="px-3 py-2 rounded-lg bg-sidebar-accent/20">
+              <p className="text-xs font-semibold text-sidebar-foreground/80 truncate">{currentName}</p>
+              {roleMeta && (
+                <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium mt-0.5", roleMeta.color)}>
+                  {roleMeta.label}
+                </span>
+              )}
+            </div>
+          )}
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-red-500/20 hover:text-red-400 transition-colors"
@@ -110,8 +134,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <span className="text-sm font-semibold text-primary">2024-2025</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold">م</div>
-            <span className="text-sm font-medium hidden md:inline">مدير المدرسة</span>
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold">
+              {currentName ? currentName.charAt(0) : "م"}
+            </div>
+            <span className="text-sm font-medium hidden md:inline">{currentName || "مستخدم"}</span>
+            {roleMeta && (
+              <span className={cn("hidden md:inline-flex items-center px-2 py-0.5 rounded text-xs font-medium", roleMeta.color)}>
+                {roleMeta.label}
+              </span>
+            )}
           </div>
         </header>
 

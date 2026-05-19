@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { adminsTable } from "@workspace/db";
-import { eq, or } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
 import { createHmac } from "crypto";
 
 const router = Router();
@@ -29,39 +29,70 @@ export function verifyToken(token: string): { adminId: number } | null {
 }
 
 router.post("/auth/register", async (req, res) => {
-  const { name, username, email, password } = req.body;
-  if (!name || !username || !password) {
-    res.status(400).json({ error: "الاسم واسم المستخدم وكلمة المرور مطلوبة" });
+  const { name, username, phone, password, role } = req.body;
+
+  if (!name || !username || !phone || !password) {
+    res.status(400).json({ error: "الاسم الكامل واسم المستخدم ورقم الهاتف وكلمة المرور مطلوبة" });
     return;
   }
+
+  // Validate three-word full name
+  const nameParts = String(name).trim().split(/\s+/).filter(Boolean);
+  if (nameParts.length < 3) {
+    res.status(400).json({ error: "يجب أن يتكون الاسم الكامل من ثلاثة أسماء على الأقل" });
+    return;
+  }
+
   if (typeof password !== "string" || password.length < 6) {
     res.status(400).json({ error: "يجب أن تكون كلمة المرور 6 أحرف على الأقل" });
     return;
   }
-  const emailVal: string | undefined = typeof email === "string" && email.trim() ? email.trim() : undefined;
 
-  const existing = await db
+  const phoneStr = String(phone).trim();
+
+  // Check username uniqueness
+  const [usernameExists] = await db
     .select({ id: adminsTable.id })
     .from(adminsTable)
-    .where(
-      emailVal
-        ? or(eq(adminsTable.username, username), eq(adminsTable.email, emailVal))
-        : eq(adminsTable.username, username)
-    )
+    .where(eq(adminsTable.username, username))
     .limit(1);
-
-  if (existing.length > 0) {
-    res.status(409).json({ error: "اسم المستخدم أو البريد الإلكتروني مستخدم بالفعل" });
+  if (usernameExists) {
+    res.status(409).json({ error: "اسم المستخدم مستخدم بالفعل" });
     return;
+  }
+
+  // Check phone uniqueness
+  const [phoneExists] = await db
+    .select({ id: adminsTable.id })
+    .from(adminsTable)
+    .where(eq(adminsTable.phone, phoneStr))
+    .limit(1);
+  if (phoneExists) {
+    res.status(409).json({ error: "رقم الهاتف مستخدم بالفعل" });
+    return;
+  }
+
+  // Determine role
+  const [{ total }] = await db.select({ total: count() }).from(adminsTable);
+  let finalRole: string;
+
+  if (total === 0) {
+    finalRole = "admin"; // First user always becomes admin
+  } else {
+    if (role === "admin") {
+      res.status(409).json({ error: "يوجد مدير واحد فقط مسموح به في النظام" });
+      return;
+    }
+    finalRole = role === "student" ? "student" : "teacher";
   }
 
   const passwordHash = hashPassword(password);
   const [newAdmin] = await db
     .insert(adminsTable)
-    .values({ name, username, email: emailVal ?? null, passwordHash, role: "admin" })
+    .values({ name: String(name).trim(), username, phone: phoneStr, passwordHash, role: finalRole })
     .returning({ id: adminsTable.id, username: adminsTable.username, name: adminsTable.name, role: adminsTable.role });
 
-  req.log.info({ adminId: newAdmin.id }, "New admin registered");
+  req.log.info({ adminId: newAdmin.id, role: finalRole }, "New user registered");
   res.status(201).json({ success: true, admin: newAdmin });
 });
 
@@ -105,7 +136,7 @@ router.get("/auth/me", async (req, res) => {
     res.status(401).json({ error: "المستخدم غير موجود" });
     return;
   }
-  res.json({ id: admin.id, username: admin.username, name: admin.name, role: admin.role });
+  res.json({ id: admin.id, username: admin.username, name: admin.name, role: admin.role, phone: admin.phone });
 });
 
 router.post("/auth/logout", (_req, res) => {
