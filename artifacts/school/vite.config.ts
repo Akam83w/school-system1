@@ -97,11 +97,14 @@ export default defineConfig({
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,woff,woff2}"],
         navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/api\//],
+        // Use a regex that works against absolute URLs (the SW sees full https://… URLs)
+        navigateFallbackDenylist: [/\/api\//],
         runtimeCaching: [
           {
-            urlPattern: /^\/api\//,
+            // Function-based pattern works with absolute URLs in service worker context
+            urlPattern: ({ url }: { url: URL }) => url.pathname.startsWith("/api/"),
             handler: "NetworkFirst",
+            method: "GET",
             options: {
               cacheName: "api-cache-v1",
               networkTimeoutSeconds: 5,

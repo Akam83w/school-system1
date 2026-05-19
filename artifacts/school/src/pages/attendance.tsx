@@ -1,25 +1,21 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout";
 import {
-  useListAttendance,
-  useListStudents,
-  useListClasses,
-  useRecordAttendance,
-  getListAttendanceQueryKey,
-  useGetMe,
+  useListAttendance, useListStudents, useListClasses, useRecordAttendance,
+  getListAttendanceQueryKey, useGetMe,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
 const STATUS_OPTIONS = ["حاضر", "غائب", "متأخر"];
-const STATUS_COLORS: Record<string, string> = {
-  "حاضر": "bg-emerald-100 text-emerald-700 border-emerald-200",
-  "غائب": "bg-red-100 text-red-700 border-red-200",
-  "متأخر": "bg-amber-100 text-amber-700 border-amber-200",
+const STATUS_STYLE: Record<string, { cls: string; dot: string; bg: string }> = {
+  "حاضر": { cls: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500", bg: "bg-emerald-50" },
+  "غائب": { cls: "bg-red-50 text-red-700 border-red-200", dot: "bg-red-500", bg: "bg-red-50" },
+  "متأخر": { cls: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500", bg: "bg-amber-50" },
 };
-
 const CURRENT_YEAR = "2024-2025";
 const ACADEMIC_YEARS = ["2024-2025", "2023-2024", "2022-2023", "2021-2022"];
+const inputCls = "px-3 py-2.5 rounded-lg border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors";
 
 export default function AttendancePage() {
   const today = new Date().toISOString().split("T")[0];
@@ -32,219 +28,209 @@ export default function AttendancePage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: me } = useGetMe();
-  const userRole = (me as any)?.role ?? "";
+  const canRecord = ["admin", "teacher"].includes((me as any)?.role ?? "");
 
-  const params = {
-    date: dateFilter || undefined,
-    classId: classFilter ? Number(classFilter) : undefined,
-    studentId: studentFilter ? Number(studentFilter) : undefined,
-    academicYear: yearFilter || undefined,
-  };
+  const params = { date: dateFilter || undefined, classId: classFilter ? Number(classFilter) : undefined, studentId: studentFilter ? Number(studentFilter) : undefined, academicYear: yearFilter || undefined };
   const { data: records, isLoading } = useListAttendance(params, { query: { queryKey: getListAttendanceQueryKey(params) } });
   const { data: students } = useListStudents();
   const { data: classes } = useListClasses();
 
   const recordMutation = useRecordAttendance({
     mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListAttendanceQueryKey() });
-        setShowForm(false);
-        setForm({ studentId: "", classId: "", date: today, status: "حاضر", academicYear: CURRENT_YEAR, notes: "" });
-        toast({ title: "تم تسجيل الحضور بنجاح" });
-      },
-      onError: (err: any) => {
-        const msg = err?.response?.data?.error ?? "حدث خطأ";
-        toast({ title: "فشل التسجيل", description: msg, variant: "destructive" });
-      },
+      onSuccess: () => { queryClient.invalidateQueries({ queryKey: getListAttendanceQueryKey() }); setShowForm(false); setForm({ studentId: "", classId: "", date: today, status: "حاضر", academicYear: CURRENT_YEAR, notes: "" }); toast({ title: "✓ تم تسجيل الحضور" }); },
+      onError: (err: any) => { toast({ title: "فشل التسجيل", description: err?.response?.data?.error ?? "حدث خطأ", variant: "destructive" }); },
     },
   });
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    recordMutation.mutate({
-      data: {
-        studentId: Number(form.studentId),
-        classId: Number(form.classId),
-        date: form.date,
-        status: form.status,
-        academicYear: form.academicYear,
-        notes: form.notes,
-      },
-    });
+    recordMutation.mutate({ data: { studentId: Number(form.studentId), classId: Number(form.classId), date: form.date, status: form.status, academicYear: form.academicYear, notes: form.notes } });
   }
 
-  const summary = {
-    present: (records ?? []).filter(r => r.status === "حاضر").length,
-    absent: (records ?? []).filter(r => r.status === "غائب").length,
-    late: (records ?? []).filter(r => r.status === "متأخر").length,
-  };
-
-  const canRecord = userRole === "admin" || userRole === "teacher";
+  const present = (records ?? []).filter(r => r.status === "حاضر").length;
+  const absent = (records ?? []).filter(r => r.status === "غائب").length;
+  const late = (records ?? []).filter(r => r.status === "متأخر").length;
+  const total = (records ?? []).length;
 
   return (
     <Layout>
       <div className="space-y-5" dir="rtl">
+        {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold">الحضور والغياب</h1>
-            <p className="text-muted-foreground text-sm">سجل تاريخي يومي — كل يوم يُضاف كسجل جديد دون حذف</p>
+            <h1 className="text-2xl font-black text-foreground">الحضور والغياب</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">سجل تاريخي دائم — كل يوم يُضاف كسجل جديد</p>
           </div>
           {canRecord && (
-            <button onClick={() => setShowForm(true)} className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 shadow-sm">
-              + تسجيل حضور
+            <button onClick={() => setShowForm(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm shadow-primary/20">
+              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              تسجيل حضور
             </button>
           )}
         </div>
 
         {/* Filters */}
-        <div className="bg-card border border-border rounded-xl p-4">
-          <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wide">تصفية السجلات</p>
-          <div className="flex flex-wrap gap-3">
-            <select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background">
+        <div className="bg-white rounded-xl border border-border p-4 shadow-sm">
+          <p className="text-xs font-bold text-muted-foreground mb-3 uppercase tracking-wider">تصفية السجلات</p>
+          <div className="flex flex-wrap gap-3 items-center">
+            <select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className={inputCls}>
               <option value="">جميع الأعوام</option>
               {ACADEMIC_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
-            <input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-            <select value={classFilter} onChange={(e) => setClassFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background">
+            <input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className={inputCls} />
+            <select value={classFilter} onChange={(e) => setClassFilter(e.target.value)} className={inputCls}>
               <option value="">جميع الصفوف</option>
               {(classes ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-            <select value={studentFilter} onChange={(e) => setStudentFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background">
+            <select value={studentFilter} onChange={(e) => setStudentFilter(e.target.value)} className={inputCls}>
               <option value="">جميع الطلاب</option>
               {(students ?? []).map((s) => <option key={s.id} value={s.id}>{s.fullName}</option>)}
             </select>
-            <button onClick={() => { setDateFilter(""); setClassFilter(""); setStudentFilter(""); setYearFilter(CURRENT_YEAR); }} className="text-xs text-muted-foreground hover:text-foreground underline">
-              إعادة تعيين
-            </button>
+            {(dateFilter !== today || classFilter || studentFilter || yearFilter !== CURRENT_YEAR) && (
+              <button onClick={() => { setDateFilter(today); setClassFilter(""); setStudentFilter(""); setYearFilter(CURRENT_YEAR); }}
+                className="text-xs text-muted-foreground hover:text-foreground underline">إعادة تعيين</button>
+            )}
           </div>
         </div>
 
         {/* Summary cards */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
-            <p className="text-2xl font-bold text-emerald-700">{summary.present}</p>
-            <p className="text-sm text-emerald-600 mt-1">حاضر</p>
+        {total > 0 && (
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { label: "حاضر", count: present, pct: total ? Math.round(present / total * 100) : 0, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200", bar: "bg-emerald-500" },
+              { label: "غائب", count: absent, pct: total ? Math.round(absent / total * 100) : 0, color: "text-red-600", bg: "bg-red-50", border: "border-red-200", bar: "bg-red-500" },
+              { label: "متأخر", count: late, pct: total ? Math.round(late / total * 100) : 0, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200", bar: "bg-amber-500" },
+            ].map(({ label, count, pct, color, bg, border, bar }) => (
+              <div key={label} className={`${bg} border ${border} rounded-xl p-4`}>
+                <div className={`text-2xl font-black ${color}`}>{count}</div>
+                <div className={`text-sm font-semibold ${color} mt-0.5`}>{label}</div>
+                <div className="mt-2 h-1.5 bg-black/10 rounded-full overflow-hidden">
+                  <div className={`h-full ${bar} rounded-full transition-all`} style={{ width: `${pct}%` }} />
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">{pct}%</div>
+              </div>
+            ))}
           </div>
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
-            <p className="text-2xl font-bold text-red-700">{summary.absent}</p>
-            <p className="text-sm text-red-600 mt-1">غائب</p>
-          </div>
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-            <p className="text-2xl font-bold text-amber-700">{summary.late}</p>
-            <p className="text-sm text-amber-600 mt-1">متأخر</p>
-          </div>
-        </div>
+        )}
 
         {/* Records table */}
-        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-          <div className="px-5 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
-            <span className="text-sm font-semibold">سجلات الحضور</span>
-            <span className="text-xs text-muted-foreground">{(records ?? []).length} سجل</span>
+        <div className="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-border bg-muted/30 flex items-center justify-between">
+            <span className="text-sm font-bold">سجلات الحضور</span>
+            <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-lg">{total} سجل</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-muted/20 border-b border-border">
+                <tr className="border-b border-border bg-muted/20">
                   {["الطالب", "الصف", "التاريخ", "العام الدراسي", "الحالة", "ملاحظات"].map((h) => (
-                    <th key={h} className="text-right px-4 py-2.5 font-semibold text-foreground text-xs">{h}</th>
+                    <th key={h} className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-border/60">
                 {isLoading ? [...Array(6)].map((_, i) => (
-                  <tr key={i} className="border-b border-border">
-                    {[...Array(6)].map((__, j) => <td key={j} className="px-4 py-3"><div className="h-4 bg-muted animate-pulse rounded" /></td>)}
-                  </tr>
+                  <tr key={i}>{[...Array(6)].map((__, j) => <td key={j} className="px-4 py-3.5"><div className="h-4 bg-muted animate-pulse rounded-lg" /></td>)}</tr>
                 )) : (records ?? []).length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center">
-                      <p className="text-3xl mb-2">✅</p>
-                      <p className="text-muted-foreground text-sm">لا توجد سجلات لهذا الفلتر</p>
+                    <td colSpan={6} className="px-4 py-14 text-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <span className="text-3xl">✅</span>
+                        <p className="text-muted-foreground text-sm">لا توجد سجلات لهذا الفلتر</p>
+                      </div>
                     </td>
                   </tr>
-                ) : (records ?? []).map((r) => (
-                  <tr key={r.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
-                    <td className="px-4 py-2.5 font-medium">{r.studentName}</td>
-                    <td className="px-4 py-2.5 text-muted-foreground text-xs">{r.className}</td>
-                    <td className="px-4 py-2.5 text-muted-foreground font-mono text-xs">{r.date}</td>
-                    <td className="px-4 py-2.5 text-muted-foreground text-xs">{(r as any).academicYear ?? CURRENT_YEAR}</td>
-                    <td className="px-4 py-2.5">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${STATUS_COLORS[r.status] ?? "bg-muted border-border"}`}>
-                        {r.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-muted-foreground text-xs">{r.notes ?? "—"}</td>
-                  </tr>
-                ))}
+                ) : (records ?? []).map((r) => {
+                  const s = STATUS_STYLE[r.status] ?? STATUS_STYLE["حاضر"];
+                  return (
+                    <tr key={r.id} className="hover:bg-muted/20 transition-colors">
+                      <td className="px-4 py-3.5 font-semibold">{r.studentName}</td>
+                      <td className="px-4 py-3.5 text-muted-foreground text-xs">{r.className}</td>
+                      <td className="px-4 py-3.5 font-mono text-xs text-muted-foreground">{r.date}</td>
+                      <td className="px-4 py-3.5 text-xs text-muted-foreground">{(r as any).academicYear ?? CURRENT_YEAR}</td>
+                      <td className="px-4 py-3.5">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${s.cls}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+                          {r.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-muted-foreground text-xs">{r.notes ?? "—"}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
-      {/* Add attendance modal */}
+      {/* Modal */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" dir="rtl">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="border-b border-border px-6 py-4 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm" dir="rtl">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[95vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-border px-6 py-4 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold">تسجيل حضور جديد</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">يُضاف كسجل تاريخي — لا يمكن الكتابة فوق سجل سابق</p>
+                <h3 className="text-base font-bold">تسجيل حضور جديد</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">يُضاف كسجل تاريخي دائم</p>
               </div>
-              <button onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground text-xl">&times;</button>
+              <button onClick={() => setShowForm(false)} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground transition-colors">
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">العام الدراسي *</label>
-                <select value={form.academicYear} onChange={(e) => setForm({ ...form, academicYear: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background">
-                  {ACADEMIC_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
-                </select>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">العام الدراسي *</label>
+                  <select value={form.academicYear} onChange={(e) => setForm({ ...form, academicYear: e.target.value })} className={`${inputCls} w-full`}>
+                    {ACADEMIC_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">التاريخ *</label>
+                  <input type="date" required value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className={`${inputCls} w-full`} />
+                </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">الطالب *</label>
+                <label className="block text-sm font-semibold mb-1.5">الطالب *</label>
                 <select required value={form.studentId} onChange={(e) => {
                   const s = (students ?? []).find(st => st.id === Number(e.target.value));
                   setForm({ ...form, studentId: e.target.value, classId: s?.classId ? String(s.classId) : form.classId });
-                }} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background">
+                }} className={`${inputCls} w-full`}>
                   <option value="">اختر الطالب</option>
-                  {(students ?? []).map((s) => <option key={s.id} value={s.id}>{s.fullName} - {s.className}</option>)}
+                  {(students ?? []).map((s) => <option key={s.id} value={s.id}>{s.fullName} — {s.className}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">الصف *</label>
-                <select required value={form.classId} onChange={(e) => setForm({ ...form, classId: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background">
+                <label className="block text-sm font-semibold mb-1.5">الصف *</label>
+                <select required value={form.classId} onChange={(e) => setForm({ ...form, classId: e.target.value })} className={`${inputCls} w-full`}>
                   <option value="">اختر الصف</option>
                   {(classes ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">التاريخ *</label>
-                <input type="date" required value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">الحالة *</label>
-                <div className="flex gap-2">
-                  {STATUS_OPTIONS.map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => setForm({ ...form, status: s })}
-                      className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${form.status === s ? STATUS_COLORS[s] + " font-bold" : "border-border text-muted-foreground hover:bg-muted"}`}
-                    >
-                      {s}
-                    </button>
-                  ))}
+                <label className="block text-sm font-semibold mb-1.5">الحالة *</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {STATUS_OPTIONS.map((s) => {
+                    const st = STATUS_STYLE[s];
+                    return (
+                      <button key={s} type="button" onClick={() => setForm({ ...form, status: s })}
+                        className={`py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${form.status === s ? `${st.cls} border-current` : "border-border text-muted-foreground hover:border-primary/30"}`}>
+                        {s}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">ملاحظات</label>
-                <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="اختياري" />
+                <label className="block text-sm font-semibold mb-1.5">ملاحظات</label>
+                <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className={`${inputCls} w-full`} placeholder="اختياري" />
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="submit" disabled={recordMutation.isPending} className="flex-1 py-2.5 rounded-lg bg-primary text-white font-semibold text-sm hover:bg-primary/90 disabled:opacity-50">
-                  {recordMutation.isPending ? "جاري التسجيل..." : "تسجيل"}
+                <button type="submit" disabled={recordMutation.isPending} className="flex-1 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 disabled:opacity-60 shadow-sm transition-all">
+                  {recordMutation.isPending ? "جاري التسجيل..." : "تسجيل الحضور"}
                 </button>
-                <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg border border-border text-sm font-semibold hover:bg-muted">إلغاء</button>
+                <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-colors">إلغاء</button>
               </div>
             </form>
           </div>

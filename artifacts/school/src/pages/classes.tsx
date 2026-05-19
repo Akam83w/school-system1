@@ -248,83 +248,47 @@ export default function ClassesPage() {
 
       {/* Edit modal */}
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" dir="rtl">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-            <div className="border-b border-border px-6 py-4 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm" dir="rtl">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm">
+            <div className="sticky top-0 bg-white border-b border-border px-6 py-4 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold">{editing.name}</h3>
-                <p className="text-xs text-muted-foreground">{STAGE_LABELS[editing.grade as Stage] ?? editing.grade}</p>
+                <h3 className="text-base font-bold">تعديل الصف: {editing.name}</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">{STAGE_LABELS[editing.grade as Stage] ?? editing.grade}</p>
               </div>
-              <button
-                onClick={() => setEditing(null)}
-                className="text-muted-foreground hover:text-foreground text-xl"
-              >
-                &times;
+              <button onClick={() => setEditing(null)} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground transition-colors">
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              {/* Teacher */}
-              <div>
-                <label className="block text-sm font-medium mb-1">المعلم المسؤول *</label>
-                <select
-                  required
-                  value={form.teacherId}
-                  onChange={(e) => setForm({ ...form, teacherId: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background"
-                >
-                  <option value="">اختر المعلم</option>
-                  {(teachers ?? []).map((t) => (
-                    <option key={t.id} value={t.id}>{t.fullName}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Capacity */}
-              <div>
-                <label className="block text-sm font-medium mb-1">الطاقة الاستيعابية</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={form.capacity}
-                  onChange={(e) => setForm({ ...form, capacity: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </div>
-
-              {/* Academic year */}
-              <div>
-                <label className="block text-sm font-medium mb-1">السنة الدراسية</label>
-                <input
-                  value={form.academicYear}
-                  onChange={(e) => setForm({ ...form, academicYear: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </div>
-
-              {/* Room */}
-              <div>
-                <label className="block text-sm font-medium mb-1">رقم الغرفة</label>
-                <input
-                  value={form.room}
-                  onChange={(e) => setForm({ ...form, room: e.target.value })}
-                  placeholder="رقم الغرفة (اختياري)"
-                  className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-1">
-                <button
-                  type="submit"
-                  disabled={updateMutation.isPending}
-                  className="flex-1 py-2.5 rounded-lg bg-primary text-white font-semibold text-sm hover:bg-primary/90 disabled:opacity-50"
-                >
+              {[
+                { label: "المعلم المسؤول *", key: "teacherId", type: "select" },
+                { label: "الطاقة الاستيعابية", key: "capacity", type: "number" },
+                { label: "السنة الدراسية", key: "academicYear", type: "text" },
+                { label: "رقم الغرفة", key: "room", type: "text" },
+              ].map(({ label, key, type }) => (
+                <div key={key}>
+                  <label className="block text-sm font-semibold mb-1.5">{label}</label>
+                  {type === "select" ? (
+                    <select required value={form.teacherId} onChange={(e) => setForm({ ...form, teacherId: e.target.value })}
+                      className="w-full px-3 py-2.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors bg-white">
+                      <option value="">اختر المعلم</option>
+                      {(teachers ?? []).map((t) => <option key={t.id} value={t.id}>{t.fullName}</option>)}
+                    </select>
+                  ) : (
+                    <input type={type} min={type === "number" ? "1" : undefined} value={(form as any)[key]}
+                      onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                      placeholder={key === "room" ? "رقم الغرفة (اختياري)" : undefined}
+                      className="w-full px-3 py-2.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors" />
+                  )}
+                </div>
+              ))}
+              <div className="flex gap-3 pt-2">
+                <button type="submit" disabled={updateMutation.isPending}
+                  className="flex-1 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 disabled:opacity-60 shadow-sm transition-all">
                   {updateMutation.isPending ? "جاري الحفظ..." : "حفظ التغييرات"}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setEditing(null)}
-                  className="flex-1 py-2.5 rounded-lg border border-border text-sm font-semibold hover:bg-muted"
-                >
+                <button type="button" onClick={() => setEditing(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-colors">
                   إلغاء
                 </button>
               </div>

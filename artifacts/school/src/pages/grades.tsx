@@ -1,49 +1,29 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout";
 import {
-  useListGrades,
-  useListStudents,
-  useListSubjects,
-  useListClasses,
-  useCreateGrade,
-  useDeleteGrade,
-  getListGradesQueryKey,
-  useGetMe,
+  useListGrades, useListStudents, useListSubjects, useListClasses,
+  useCreateGrade, useDeleteGrade, getListGradesQueryKey, useGetMe,
 } from "@workspace/api-client-react";
 import type { Grade } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
-const EXAM_TYPES = [
-  "اختبار الشهر الأول",
-  "اختبار الشهر الثاني",
-  "امتحان نصف السنة",
-  "الامتحان النهائي",
-  "امتحانات مستمرة",
-  "واجب بيتي",
-];
-
+const EXAM_TYPES = ["اختبار الشهر الأول", "اختبار الشهر الثاني", "امتحان نصف السنة", "الامتحان النهائي", "امتحانات مستمرة", "واجب بيتي"];
 const CURRENT_YEAR = "2024-2025";
 const ACADEMIC_YEARS = ["2024-2025", "2023-2024", "2022-2023", "2021-2022"];
 
-type GradeForm = {
-  studentId: string; subjectId: string; classId: string;
-  score: string; maxScore: string; examType: string;
-  examDate: string; academicYear: string; notes: string;
-};
+type GradeForm = { studentId: string; subjectId: string; classId: string; score: string; maxScore: string; examType: string; examDate: string; academicYear: string; notes: string };
+const emptyForm: GradeForm = { studentId: "", subjectId: "", classId: "", score: "", maxScore: "100", examType: EXAM_TYPES[0], examDate: new Date().toISOString().split("T")[0], academicYear: CURRENT_YEAR, notes: "" };
 
-const emptyForm: GradeForm = {
-  studentId: "", subjectId: "", classId: "", score: "", maxScore: "100",
-  examType: EXAM_TYPES[0], examDate: new Date().toISOString().split("T")[0],
-  academicYear: CURRENT_YEAR, notes: "",
-};
-
-function getGradeColor(pct: number) {
-  if (pct >= 90) return "text-emerald-600 font-bold";
-  if (pct >= 70) return "text-blue-600 font-semibold";
-  if (pct >= 50) return "text-amber-600 font-semibold";
-  return "text-red-600 font-semibold";
+function getGradeStyle(pct: number) {
+  if (pct >= 90) return { cls: "text-emerald-600 font-black", badge: "bg-emerald-50 text-emerald-700 border-emerald-200" };
+  if (pct >= 70) return { cls: "text-blue-600 font-bold", badge: "bg-blue-50 text-blue-700 border-blue-200" };
+  if (pct >= 50) return { cls: "text-amber-600 font-bold", badge: "bg-amber-50 text-amber-700 border-amber-200" };
+  return { cls: "text-red-600 font-bold", badge: "bg-red-50 text-red-700 border-red-200" };
 }
+
+const inputCls = "w-full px-3 py-2.5 rounded-lg border border-border bg-white text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors";
+const selectFilterCls = "px-3 py-2.5 rounded-lg border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors";
 
 export default function GradesPage() {
   const [classFilter, setClassFilter] = useState("");
@@ -58,13 +38,7 @@ export default function GradesPage() {
   const { data: me } = useGetMe();
   const isAdmin = (me as any)?.role === "admin";
 
-  const params = {
-    classId: classFilter ? Number(classFilter) : undefined,
-    subjectId: subjectFilter ? Number(subjectFilter) : undefined,
-    studentId: studentFilter ? Number(studentFilter) : undefined,
-    academicYear: yearFilter || undefined,
-    examType: examTypeFilter || undefined,
-  };
+  const params = { classId: classFilter ? Number(classFilter) : undefined, subjectId: subjectFilter ? Number(subjectFilter) : undefined, studentId: studentFilter ? Number(studentFilter) : undefined, academicYear: yearFilter || undefined, examType: examTypeFilter || undefined };
   const { data: grades, isLoading } = useListGrades(params, { query: { queryKey: getListGradesQueryKey(params) } });
   const { data: students } = useListStudents();
   const { data: subjects } = useListSubjects();
@@ -72,169 +46,143 @@ export default function GradesPage() {
 
   const createMutation = useCreateGrade({
     mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListGradesQueryKey() });
-        setShowForm(false);
-        setForm(emptyForm);
-        toast({ title: "تم تسجيل الدرجة بنجاح" });
-      },
-      onError: (err: any) => {
-        toast({ title: "فشل التسجيل", description: err?.response?.data?.error ?? "حدث خطأ", variant: "destructive" });
-      },
+      onSuccess: () => { queryClient.invalidateQueries({ queryKey: getListGradesQueryKey() }); setShowForm(false); setForm(emptyForm); toast({ title: "✓ تم تسجيل الدرجة" }); },
+      onError: (err: any) => { toast({ title: "فشل التسجيل", description: err?.response?.data?.error ?? "حدث خطأ", variant: "destructive" }); },
     },
   });
-  const deleteMutation = useDeleteGrade({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListGradesQueryKey() });
-        toast({ title: "تم حذف الدرجة" });
-      },
-    },
-  });
+  const deleteMutation = useDeleteGrade({ mutation: { onSuccess: () => { queryClient.invalidateQueries({ queryKey: getListGradesQueryKey() }); toast({ title: "تم حذف الدرجة" }); } } });
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    createMutation.mutate({
-      data: {
-        studentId: Number(form.studentId),
-        subjectId: Number(form.subjectId),
-        classId: Number(form.classId),
-        score: Number(form.score),
-        maxScore: Number(form.maxScore),
-        examType: form.examType,
-        examDate: form.examDate,
-        academicYear: form.academicYear,
-        notes: form.notes,
-      },
-    });
+    createMutation.mutate({ data: { studentId: Number(form.studentId), subjectId: Number(form.subjectId), classId: Number(form.classId), score: Number(form.score), maxScore: Number(form.maxScore), examType: form.examType, examDate: form.examDate, academicYear: form.academicYear, notes: form.notes } });
   }
 
-  // Group grades by academic year for display
   const gradesByYear = (grades ?? []).reduce<Record<string, Grade[]>>((acc, g) => {
     const year = (g as any).academicYear ?? CURRENT_YEAR;
     if (!acc[year]) acc[year] = [];
     acc[year].push(g);
     return acc;
   }, {});
-
   const yearKeys = Object.keys(gradesByYear).sort().reverse();
+  const hasFilters = yearFilter !== CURRENT_YEAR || examTypeFilter || classFilter || subjectFilter || studentFilter;
 
   return (
     <Layout>
       <div className="space-y-5" dir="rtl">
+        {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold">سجل الدرجات</h1>
-            <p className="text-muted-foreground text-sm">
+            <h1 className="text-2xl font-black text-foreground">سجل الدرجات</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">
               {isLoading ? "جاري التحميل..." : `${(grades ?? []).length} درجة مسجّلة`}
             </p>
           </div>
-          <button
-            onClick={() => { setForm(emptyForm); setShowForm(true); }}
-            className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 shadow-sm"
-          >
-            + تسجيل درجة جديدة
+          <button onClick={() => { setForm(emptyForm); setShowForm(true); }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm shadow-primary/20">
+            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            تسجيل درجة
           </button>
         </div>
 
         {/* Filters */}
-        <div className="bg-card border border-border rounded-xl p-4">
-          <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wide">تصفية النتائج</p>
-          <div className="flex flex-wrap gap-3">
-            <select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background">
+        <div className="bg-white rounded-xl border border-border p-4 shadow-sm">
+          <p className="text-xs font-bold text-muted-foreground mb-3 uppercase tracking-wider">تصفية النتائج</p>
+          <div className="flex flex-wrap gap-3 items-center">
+            <select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className={selectFilterCls}>
               <option value="">جميع الأعوام</option>
               {ACADEMIC_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
-            <select value={examTypeFilter} onChange={(e) => setExamTypeFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background">
+            <select value={examTypeFilter} onChange={(e) => setExamTypeFilter(e.target.value)} className={selectFilterCls}>
               <option value="">جميع أنواع الامتحانات</option>
               {EXAM_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
-            <select value={classFilter} onChange={(e) => setClassFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background">
+            <select value={classFilter} onChange={(e) => setClassFilter(e.target.value)} className={selectFilterCls}>
               <option value="">جميع الصفوف</option>
               {(classes ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-            <select value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background">
+            <select value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)} className={selectFilterCls}>
               <option value="">جميع المواد</option>
               {(subjects ?? []).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
-            <select value={studentFilter} onChange={(e) => setStudentFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background">
+            <select value={studentFilter} onChange={(e) => setStudentFilter(e.target.value)} className={selectFilterCls}>
               <option value="">جميع الطلاب</option>
               {(students ?? []).map((s) => <option key={s.id} value={s.id}>{s.fullName}</option>)}
             </select>
-            {(yearFilter !== CURRENT_YEAR || examTypeFilter || classFilter || subjectFilter || studentFilter) && (
-              <button onClick={() => { setYearFilter(CURRENT_YEAR); setExamTypeFilter(""); setClassFilter(""); setSubjectFilter(""); setStudentFilter(""); }} className="text-xs text-muted-foreground hover:text-foreground underline">
-                إعادة تعيين
-              </button>
+            {hasFilters && (
+              <button onClick={() => { setYearFilter(CURRENT_YEAR); setExamTypeFilter(""); setClassFilter(""); setSubjectFilter(""); setStudentFilter(""); }} className="text-xs text-muted-foreground hover:text-foreground underline">إعادة تعيين</button>
             )}
           </div>
         </div>
 
         {/* Loading */}
         {isLoading && (
-          <div className="space-y-2">
-            {[...Array(4)].map((_, i) => <div key={i} className="h-12 bg-muted rounded-lg animate-pulse" />)}
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => <div key={i} className="h-14 bg-white border border-border rounded-xl animate-pulse" />)}
           </div>
         )}
 
         {/* Empty */}
         {!isLoading && (grades ?? []).length === 0 && (
-          <div className="bg-card rounded-xl border border-border p-16 text-center">
+          <div className="bg-white rounded-xl border border-border p-16 text-center shadow-sm">
             <p className="text-4xl mb-3">📝</p>
             <p className="font-semibold text-foreground mb-1">لا توجد درجات مسجّلة</p>
-            <p className="text-sm text-muted-foreground">ابدأ بتسجيل درجات الطلاب للعام الدراسي الحالي</p>
+            <p className="text-sm text-muted-foreground">ابدأ بتسجيل درجات الطلاب</p>
           </div>
         )}
 
-        {/* Grades grouped by academic year */}
+        {/* Grouped by year */}
         {!isLoading && yearKeys.map((year) => {
           const yearGrades = gradesByYear[year];
-          const avg = yearGrades.length > 0
-            ? Math.round(yearGrades.reduce((s, g) => s + (g.score / g.maxScore) * 100, 0) / yearGrades.length)
-            : null;
+          const avg = yearGrades.length > 0 ? Math.round(yearGrades.reduce((s, g) => s + (g.score / g.maxScore) * 100, 0) / yearGrades.length) : null;
+          const avgStyle = avg !== null ? getGradeStyle(avg) : null;
           return (
-            <div key={year} className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-              <div className="px-5 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
+            <div key={year} className="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
+              {/* Year header */}
+              <div className="px-5 py-3.5 border-b border-border bg-muted/30 flex items-center justify-between">
                 <div className="flex items-center gap-3">
+                  <div className="w-2 h-6 bg-primary rounded-full" />
                   <span className="text-sm font-bold text-foreground">العام الدراسي: {year}</span>
-                  <span className="text-xs text-muted-foreground">{yearGrades.length} سجل</span>
+                  <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-lg">{yearGrades.length} سجل</span>
                 </div>
-                {avg !== null && (
-                  <span className={`text-sm font-semibold ${getGradeColor(avg)}`}>المتوسط: {avg}%</span>
+                {avgStyle && avg !== null && (
+                  <span className={`text-sm font-bold px-3 py-1 rounded-full border ${avgStyle.badge}`}>
+                    المتوسط: {avg}%
+                  </span>
                 )}
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-muted/20 border-b border-border">
-                      {["الطالب", "المادة", "الصف", "الدرجة", "النسبة", "نوع الامتحان", "التاريخ", ...(isAdmin ? ["الإجراءات"] : [])].map((h) => (
-                        <th key={h} className="text-right px-4 py-2.5 font-semibold text-foreground text-xs">{h}</th>
+                    <tr className="border-b border-border bg-muted/10">
+                      {["الطالب", "المادة", "الصف", "الدرجة", "النسبة", "نوع الامتحان", "التاريخ", ...(isAdmin ? ["حذف"] : [])].map((h) => (
+                        <th key={h} className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{h}</th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-border/60">
                     {yearGrades.map((g) => {
                       const pct = Math.round((g.score / g.maxScore) * 100);
+                      const style = getGradeStyle(pct);
                       return (
-                        <tr key={g.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
-                          <td className="px-4 py-2.5 font-medium">{g.studentName}</td>
-                          <td className="px-4 py-2.5 text-muted-foreground">{g.subjectName}</td>
-                          <td className="px-4 py-2.5 text-muted-foreground">{g.className}</td>
-                          <td className="px-4 py-2.5 font-mono font-semibold">{g.score}<span className="text-muted-foreground font-normal text-xs">/{g.maxScore}</span></td>
-                          <td className="px-4 py-2.5">
-                            <span className={`text-xs font-bold ${getGradeColor(pct)}`}>{pct}%</span>
+                        <tr key={g.id} className="hover:bg-muted/20 transition-colors">
+                          <td className="px-4 py-3 font-semibold">{g.studentName}</td>
+                          <td className="px-4 py-3 text-muted-foreground">{g.subjectName}</td>
+                          <td className="px-4 py-3 text-muted-foreground text-xs">{g.className}</td>
+                          <td className="px-4 py-3 font-mono">
+                            <span className="font-bold">{g.score}</span>
+                            <span className="text-muted-foreground text-xs">/{g.maxScore}</span>
                           </td>
-                          <td className="px-4 py-2.5">
-                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">{g.examType}</span>
+                          <td className="px-4 py-3">
+                            <span className={`text-sm ${style.cls}`}>{pct}%</span>
                           </td>
-                          <td className="px-4 py-2.5 text-muted-foreground text-xs">{g.examDate}</td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${style.badge}`}>{g.examType}</span>
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground text-xs font-mono">{g.examDate}</td>
                           {isAdmin && (
-                            <td className="px-4 py-2.5">
-                              <button
-                                onClick={() => { if (confirm("حذف هذه الدرجة؟")) deleteMutation.mutate({ id: g.id }); }}
-                                className="text-xs px-2.5 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100 font-medium"
-                              >
-                                حذف
-                              </button>
+                            <td className="px-4 py-3">
+                              <button onClick={() => { if (confirm("حذف هذه الدرجة؟")) deleteMutation.mutate({ id: g.id }); }}
+                                className="px-2.5 py-1 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-xs font-semibold transition-colors">حذف</button>
                             </td>
                           )}
                         </tr>
@@ -248,85 +196,81 @@ export default function GradesPage() {
         })}
       </div>
 
-      {/* Add grade modal */}
+      {/* Modal */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" dir="rtl">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm" dir="rtl">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[95vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-border px-6 py-4 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold">تسجيل درجة جديدة</h3>
+                <h3 className="text-base font-bold">تسجيل درجة جديدة</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">الدرجات محفوظة كسجلات تاريخية دائمة</p>
               </div>
-              <button onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground text-xl">&times;</button>
+              <button onClick={() => setShowForm(false)} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground transition-colors">
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              {/* Academic year */}
-              <div>
-                <label className="block text-sm font-medium mb-1">العام الدراسي *</label>
-                <select required value={form.academicYear} onChange={(e) => setForm({ ...form, academicYear: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background">
-                  {ACADEMIC_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
-                </select>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">العام الدراسي *</label>
+                  <select required value={form.academicYear} onChange={(e) => setForm({ ...form, academicYear: e.target.value })} className={inputCls}>
+                    {ACADEMIC_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">نوع الامتحان *</label>
+                  <select value={form.examType} onChange={(e) => setForm({ ...form, examType: e.target.value })} className={inputCls}>
+                    {EXAM_TYPES.map((t) => <option key={t}>{t}</option>)}
+                  </select>
+                </div>
               </div>
-              {/* Student */}
               <div>
-                <label className="block text-sm font-medium mb-1">الطالب *</label>
+                <label className="block text-sm font-semibold mb-1.5">الطالب *</label>
                 <select required value={form.studentId} onChange={(e) => {
                   const s = (students ?? []).find(st => st.id === Number(e.target.value));
                   setForm({ ...form, studentId: e.target.value, classId: s?.classId ? String(s.classId) : form.classId });
-                }} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background">
+                }} className={inputCls}>
                   <option value="">اختر الطالب</option>
                   {(students ?? []).map((s) => <option key={s.id} value={s.id}>{s.fullName}</option>)}
                 </select>
               </div>
-              {/* Class */}
-              <div>
-                <label className="block text-sm font-medium mb-1">الصف *</label>
-                <select required value={form.classId} onChange={(e) => setForm({ ...form, classId: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background">
-                  <option value="">اختر الصف</option>
-                  {(classes ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
-              {/* Subject */}
-              <div>
-                <label className="block text-sm font-medium mb-1">المادة *</label>
-                <select required value={form.subjectId} onChange={(e) => setForm({ ...form, subjectId: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background">
-                  <option value="">اختر المادة</option>
-                  {(subjects ?? []).map((s) => <option key={s.id} value={s.id}>{s.name} - {s.className}</option>)}
-                </select>
-              </div>
-              {/* Exam type */}
-              <div>
-                <label className="block text-sm font-medium mb-1">نوع الامتحان *</label>
-                <select value={form.examType} onChange={(e) => setForm({ ...form, examType: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background">
-                  {EXAM_TYPES.map((t) => <option key={t}>{t}</option>)}
-                </select>
-              </div>
-              {/* Score */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">الدرجة المحصلة *</label>
-                  <input required type="number" min="0" value={form.score} onChange={(e) => setForm({ ...form, score: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  <label className="block text-sm font-semibold mb-1.5">الصف *</label>
+                  <select required value={form.classId} onChange={(e) => setForm({ ...form, classId: e.target.value })} className={inputCls}>
+                    <option value="">اختر الصف</option>
+                    {(classes ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">الدرجة الكاملة *</label>
-                  <input required type="number" min="1" value={form.maxScore} onChange={(e) => setForm({ ...form, maxScore: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  <label className="block text-sm font-semibold mb-1.5">المادة *</label>
+                  <select required value={form.subjectId} onChange={(e) => setForm({ ...form, subjectId: e.target.value })} className={inputCls}>
+                    <option value="">اختر المادة</option>
+                    {(subjects ?? []).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">الدرجة المحصلة *</label>
+                  <input required type="number" min="0" value={form.score} onChange={(e) => setForm({ ...form, score: e.target.value })} className={inputCls} placeholder="مثال: 85" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">الدرجة الكاملة *</label>
+                  <input required type="number" min="1" value={form.maxScore} onChange={(e) => setForm({ ...form, maxScore: e.target.value })} className={inputCls} />
                 </div>
               </div>
-              {/* Date */}
               <div>
-                <label className="block text-sm font-medium mb-1">تاريخ الامتحان *</label>
-                <input required type="date" value={form.examDate} onChange={(e) => setForm({ ...form, examDate: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                <label className="block text-sm font-semibold mb-1.5">تاريخ الامتحان *</label>
+                <input required type="date" value={form.examDate} onChange={(e) => setForm({ ...form, examDate: e.target.value })} className={inputCls} />
               </div>
-              {/* Notes */}
               <div>
-                <label className="block text-sm font-medium mb-1">ملاحظات</label>
-                <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="اختياري" />
+                <label className="block text-sm font-semibold mb-1.5">ملاحظات</label>
+                <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className={inputCls} placeholder="اختياري" />
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="submit" disabled={createMutation.isPending} className="flex-1 py-2.5 rounded-lg bg-primary text-white font-semibold text-sm hover:bg-primary/90 disabled:opacity-50">
+                <button type="submit" disabled={createMutation.isPending} className="flex-1 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 disabled:opacity-60 shadow-sm transition-all">
                   {createMutation.isPending ? "جاري الحفظ..." : "تسجيل الدرجة"}
                 </button>
-                <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg border border-border text-sm font-semibold hover:bg-muted">إلغاء</button>
+                <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-colors">إلغاء</button>
               </div>
             </form>
           </div>
