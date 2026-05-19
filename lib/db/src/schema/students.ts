@@ -7,7 +7,7 @@ export const studentsTable = pgTable("students", {
   id: serial("id").primaryKey(),
   studentCode: text("student_code").notNull().unique(),
   fullName: text("full_name").notNull(),
-  classId: integer("class_id").notNull().references(() => classesTable.id),
+  classId: integer("class_id").references(() => classesTable.id),
   gender: text("gender").notNull(),
   dateOfBirth: text("date_of_birth").notNull(),
   enrollmentDate: text("enrollment_date").notNull().default("2024-09-01"),

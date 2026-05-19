@@ -64,7 +64,9 @@ router.post("/students", async (req, res) => {
     address: address ?? null,
     status: status ?? "active",
   }).returning();
-  const [cls] = await db.select({ name: classesTable.name }).from(classesTable).where(eq(classesTable.id, row.classId));
+  const [cls] = row.classId != null
+    ? await db.select({ name: classesTable.name }).from(classesTable).where(eq(classesTable.id, row.classId))
+    : [];
   res.status(201).json({ ...row, className: cls?.name ?? "" });
 });
 
@@ -106,7 +108,9 @@ router.patch("/students/:id", async (req, res) => {
   if (status !== undefined) updates.status = status;
   const [row] = await db.update(studentsTable).set(updates).where(eq(studentsTable.id, Number(req.params.id))).returning();
   if (!row) { res.status(404).json({ error: "الطالب غير موجود" }); return; }
-  const [cls] = await db.select({ name: classesTable.name }).from(classesTable).where(eq(classesTable.id, row.classId));
+  const [cls] = row.classId != null
+    ? await db.select({ name: classesTable.name }).from(classesTable).where(eq(classesTable.id, row.classId))
+    : [];
   res.json({ ...row, className: cls?.name ?? "" });
 });
 
