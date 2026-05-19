@@ -30,6 +30,8 @@ tags:
     description: System user management (admin only)
   - name: announcements
     description: School announcements and notices
+  - name: academic-years
+    description: Academic year management
 
 paths:
   /healthz:
@@ -664,6 +666,53 @@ paths:
                 items:
                   $ref: "#/components/schemas/Activity"
 
+  /academic-years:
+    get:
+      operationId: listAcademicYears
+      tags: [academic-years]
+      summary: List all academic year entities (2020-2100)
+      responses:
+        "200":
+          description: Array of academic year entities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AcademicYear"
+
+  /academic-years/current:
+    get:
+      operationId: getCurrentAcademicYear
+      tags: [academic-years]
+      summary: Get the school's active academic year
+      responses:
+        "200":
+          description: Current academic year or null
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcademicYear"
+
+  /academic-years/{id}/set-current:
+    patch:
+      operationId: setCurrentAcademicYear
+      tags: [academic-years]
+      summary: Set the school's active academic year (admin only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated academic year
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcademicYear"
+
   /announcements:
     get:
       operationId: listAnnouncements
@@ -837,6 +886,16 @@ components:
         token: { type: string }
         admin:
           $ref: "#/components/schemas/Admin"
+
+    AcademicYear:
+      type: object
+      required: [id, startYear, endYear, label, isCurrent]
+      properties:
+        id: { type: integer }
+        startYear: { type: integer }
+        endYear: { type: integer }
+        label: { type: string }
+        isCurrent: { type: boolean }
 
     Announcement:
       type: object

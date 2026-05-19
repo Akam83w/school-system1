@@ -4,6 +4,7 @@ import {
   useListGrades, useListStudents, useListSubjects, useListClasses,
   useCreateGrade, useDeleteGrade, getListGradesQueryKey, useGetMe,
 } from "@workspace/api-client-react";
+import { useAcademicYear } from "@/contexts/AcademicYearContext";
 import type { Grade } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -12,11 +13,11 @@ import { enqueueAction, getOfflineActionsForEntity } from "@/lib/offlineSync";
 import type { OfflineAction } from "@/lib/offlineDb";
 
 const EXAM_TYPES = ["اختبار الشهر الأول", "اختبار الشهر الثاني", "امتحان نصف السنة", "الامتحان النهائي", "امتحانات مستمرة", "واجب بيتي"];
-const CURRENT_YEAR = "2024-2025";
-const ACADEMIC_YEARS = ["2024-2025", "2023-2024", "2022-2023", "2021-2022"];
 
 type GradeForm = { studentId: string; subjectId: string; classId: string; score: string; maxScore: string; examType: string; examDate: string; academicYear: string; notes: string };
-const emptyForm: GradeForm = { studentId: "", subjectId: "", classId: "", score: "", maxScore: "100", examType: EXAM_TYPES[0], examDate: new Date().toISOString().split("T")[0], academicYear: CURRENT_YEAR, notes: "" };
+function makeEmptyForm(year: string): GradeForm {
+  return { studentId: "", subjectId: "", classId: "", score: "", maxScore: "100", examType: EXAM_TYPES[0], examDate: new Date().toISOString().split("T")[0], academicYear: year, notes: "" };
+}
 
 function getBase() {
   return (import.meta.env.BASE_URL as string).replace(/\/$/, '');
@@ -33,13 +34,17 @@ const inputCls = "w-full px-3 py-2.5 rounded-lg border border-border bg-white te
 const selectFilterCls = "px-3 py-2.5 rounded-lg border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors";
 
 export default function GradesPage() {
+  const { selectedYear, allYears } = useAcademicYear();
   const [classFilter, setClassFilter] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
   const [studentFilter, setStudentFilter] = useState("");
-  const [yearFilter, setYearFilter] = useState(CURRENT_YEAR);
+  const [yearFilter, setYearFilter] = useState(selectedYear);
   const [examTypeFilter, setExamTypeFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState<GradeForm>(emptyForm);
+  const [form, setForm] = useState<GradeForm>(() => makeEmptyForm(selectedYear));
+
+  // Sync page filter when the global year selector changes
+  useEffect(() => { setYearFilter(selectedYear); }, [selectedYear]);
   const [offlinePending, setOfflinePending] = useState<OfflineAction[]>([]);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -59,7 +64,7 @@ export default function GradesPage() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListGradesQueryKey() });
         setShowForm(false);
-        setForm(emptyForm);
+        setForm(makeEmptyForm(yearFilter));
         toast({ title: "✓ تم تسجيل الدرجة" });
       },
       onError: (err: any) => {
@@ -118,7 +123,7 @@ export default function GradesPage() {
       });
       toast({ title: "✓ تم الحفظ محلياً", description: "سيُزامَن تلقائياً عند عودة الاتصال" });
       setShowForm(false);
-      setForm(emptyForm);
+      setForm(makeEmptyForm(yearFilter));
       await loadOfflinePending();
     } else {
       createMutation.mutate({ data: payload });
@@ -126,13 +131,13 @@ export default function GradesPage() {
   }
 
   const gradesByYear = (grades ?? []).reduce<Record<string, Grade[]>>((acc, g) => {
-    const year = (g as any).academicYear ?? CURRENT_YEAR;
+    const year = (g as any).academicYear ?? selectedYear;
     if (!acc[year]) acc[year] = [];
     acc[year].push(g);
     return acc;
   }, {});
   const yearKeys = Object.keys(gradesByYear).sort().reverse();
-  const hasFilters = yearFilter !== CURRENT_YEAR || examTypeFilter || classFilter || subjectFilter || studentFilter;
+  const hasFilters = yearFilter !== selectedYear || examTypeFilter || classFilter || subjectFilter || studentFilter;
   const totalCount = (grades ?? []).length + offlinePending.length;
 
   return (
@@ -154,7 +159,7 @@ export default function GradesPage() {
               </span>
             )}
             {canRecord && (
-              <button onClick={() => { setForm(emptyForm); setShowForm(true); }}
+              <button onClick={() => { setForm(makeEmptyForm(yearFilter)); setShowForm(true); }}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm shadow-primary/20">
                 <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 تسجيل درجة
@@ -169,7 +174,7 @@ export default function GradesPage() {
           <div className="flex flex-wrap gap-3 items-center">
             <select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className={selectFilterCls}>
               <option value="">جميع الأعوام</option>
-              {ACADEMIC_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
+              {[...allYears].reverse().map((y) => <option key={y.id} value={y.label}>{y.label}</option>)}
             </select>
             <select value={examTypeFilter} onChange={(e) => setExamTypeFilter(e.target.value)} className={selectFilterCls}>
               <option value="">جميع أنواع الامتحانات</option>
@@ -188,7 +193,7 @@ export default function GradesPage() {
               {(students ?? []).map((s) => <option key={s.id} value={s.id}>{s.fullName}</option>)}
             </select>
             {hasFilters && (
-              <button onClick={() => { setYearFilter(CURRENT_YEAR); setExamTypeFilter(""); setClassFilter(""); setSubjectFilter(""); setStudentFilter(""); }} className="text-xs text-muted-foreground hover:text-foreground underline">إعادة تعيين</button>
+              <button onClick={() => { setYearFilter(selectedYear); setExamTypeFilter(""); setClassFilter(""); setSubjectFilter(""); setStudentFilter(""); }} className="text-xs text-muted-foreground hover:text-foreground underline">إعادة تعيين</button>
             )}
           </div>
         </div>
@@ -350,7 +355,7 @@ export default function GradesPage() {
                 <div>
                   <label className="block text-sm font-semibold mb-1.5">العام الدراسي *</label>
                   <select required value={form.academicYear} onChange={(e) => setForm({ ...form, academicYear: e.target.value })} className={inputCls}>
-                    {ACADEMIC_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
+                    {[...allYears].reverse().map((y) => <option key={y.id} value={y.label}>{y.label}</option>)}
                   </select>
                 </div>
                 <div>

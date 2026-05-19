@@ -4,6 +4,7 @@ import {
   useListAttendance, useListStudents, useListClasses, useRecordAttendance,
   getListAttendanceQueryKey, useGetMe,
 } from "@workspace/api-client-react";
+import { useAcademicYear } from "@/contexts/AcademicYearContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
@@ -16,8 +17,6 @@ const STATUS_STYLE: Record<string, { cls: string; dot: string; bg: string }> = {
   "غائب": { cls: "bg-red-50 text-red-700 border-red-200", dot: "bg-red-500", bg: "bg-red-50" },
   "متأخر": { cls: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500", bg: "bg-amber-50" },
 };
-const CURRENT_YEAR = "2024-2025";
-const ACADEMIC_YEARS = ["2024-2025", "2023-2024", "2022-2023", "2021-2022"];
 const inputCls = "px-3 py-2.5 rounded-lg border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors";
 
 function getBase() {
@@ -25,13 +24,17 @@ function getBase() {
 }
 
 export default function AttendancePage() {
+  const { selectedYear, allYears } = useAcademicYear();
   const today = new Date().toISOString().split("T")[0];
   const [dateFilter, setDateFilter] = useState(today);
   const [classFilter, setClassFilter] = useState("");
-  const [yearFilter, setYearFilter] = useState(CURRENT_YEAR);
+  const [yearFilter, setYearFilter] = useState(selectedYear);
   const [studentFilter, setStudentFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ studentId: "", classId: "", date: today, status: "حاضر", academicYear: CURRENT_YEAR, notes: "" });
+  const [form, setForm] = useState({ studentId: "", classId: "", date: today, status: "حاضر", academicYear: selectedYear, notes: "" });
+
+  // Sync page filter when the global year selector changes
+  useEffect(() => { setYearFilter(selectedYear); }, [selectedYear]);
   const [offlinePending, setOfflinePending] = useState<OfflineAction[]>([]);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -49,7 +52,7 @@ export default function AttendancePage() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListAttendanceQueryKey() });
         setShowForm(false);
-        setForm({ studentId: "", classId: "", date: today, status: "حاضر", academicYear: CURRENT_YEAR, notes: "" });
+        setForm({ studentId: "", classId: "", date: today, status: "حاضر", academicYear: yearFilter, notes: "" });
         toast({ title: "✓ تم تسجيل الحضور" });
       },
       onError: (err: any) => {
@@ -97,7 +100,7 @@ export default function AttendancePage() {
       });
       toast({ title: "✓ تم الحفظ محلياً", description: "سيُزامَن تلقائياً عند عودة الاتصال" });
       setShowForm(false);
-      setForm({ studentId: "", classId: "", date: today, status: "حاضر", academicYear: CURRENT_YEAR, notes: "" });
+      setForm({ studentId: "", classId: "", date: today, status: "حاضر", academicYear: yearFilter, notes: "" });
       await loadOfflinePending();
     } else {
       recordMutation.mutate({ data: payload });
@@ -142,7 +145,7 @@ export default function AttendancePage() {
           <div className="flex flex-wrap gap-3 items-center">
             <select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className={inputCls}>
               <option value="">جميع الأعوام</option>
-              {ACADEMIC_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
+              {[...allYears].reverse().map((y) => <option key={y.id} value={y.label}>{y.label}</option>)}
             </select>
             <input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className={inputCls} />
             <select value={classFilter} onChange={(e) => setClassFilter(e.target.value)} className={inputCls}>
@@ -153,8 +156,8 @@ export default function AttendancePage() {
               <option value="">جميع الطلاب</option>
               {(students ?? []).map((s) => <option key={s.id} value={s.id}>{s.fullName}</option>)}
             </select>
-            {(dateFilter !== today || classFilter || studentFilter || yearFilter !== CURRENT_YEAR) && (
-              <button onClick={() => { setDateFilter(today); setClassFilter(""); setStudentFilter(""); setYearFilter(CURRENT_YEAR); }}
+            {(dateFilter !== today || classFilter || studentFilter || yearFilter !== selectedYear) && (
+              <button onClick={() => { setDateFilter(today); setClassFilter(""); setStudentFilter(""); setYearFilter(selectedYear); }}
                 className="text-xs text-muted-foreground hover:text-foreground underline">إعادة تعيين</button>
             )}
           </div>
@@ -213,7 +216,7 @@ export default function AttendancePage() {
                       <td className="px-4 py-3.5 font-semibold text-amber-900">{String(d.studentName ?? "—")}</td>
                       <td className="px-4 py-3.5 text-muted-foreground text-xs">{String(d.className ?? "—")}</td>
                       <td className="px-4 py-3.5 font-mono text-xs text-muted-foreground">{String(d.date ?? "—")}</td>
-                      <td className="px-4 py-3.5 text-xs text-muted-foreground">{String(d.academicYear ?? CURRENT_YEAR)}</td>
+                      <td className="px-4 py-3.5 text-xs text-muted-foreground">{String(d.academicYear ?? selectedYear)}</td>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-1.5">
                           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${s.cls}`}>
@@ -250,7 +253,7 @@ export default function AttendancePage() {
                       <td className="px-4 py-3.5 font-semibold">{r.studentName}</td>
                       <td className="px-4 py-3.5 text-muted-foreground text-xs">{r.className}</td>
                       <td className="px-4 py-3.5 font-mono text-xs text-muted-foreground">{r.date}</td>
-                      <td className="px-4 py-3.5 text-xs text-muted-foreground">{(r as any).academicYear ?? CURRENT_YEAR}</td>
+                      <td className="px-4 py-3.5 text-xs text-muted-foreground">{(r as any).academicYear ?? selectedYear}</td>
                       <td className="px-4 py-3.5">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${s.cls}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
@@ -287,7 +290,7 @@ export default function AttendancePage() {
                 <div>
                   <label className="block text-sm font-semibold mb-1.5">العام الدراسي *</label>
                   <select value={form.academicYear} onChange={(e) => setForm({ ...form, academicYear: e.target.value })} className={`${inputCls} w-full`}>
-                    {ACADEMIC_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
+                    {[...allYears].reverse().map((y) => <option key={y.id} value={y.label}>{y.label}</option>)}
                   </select>
                 </div>
                 <div>

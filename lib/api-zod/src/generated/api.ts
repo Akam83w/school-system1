@@ -613,6 +613,47 @@ export const GetRecentActivityResponse = zod.array(GetRecentActivityResponseItem
 
 
 /**
+ * @summary List all academic year entities (2020-2100)
+ */
+export const ListAcademicYearsResponseItem = zod.object({
+  "id": zod.number(),
+  "startYear": zod.number(),
+  "endYear": zod.number(),
+  "label": zod.string(),
+  "isCurrent": zod.boolean()
+})
+export const ListAcademicYearsResponse = zod.array(ListAcademicYearsResponseItem)
+
+
+/**
+ * @summary Get the school's active academic year
+ */
+export const GetCurrentAcademicYearResponse = zod.object({
+  "id": zod.number(),
+  "startYear": zod.number(),
+  "endYear": zod.number(),
+  "label": zod.string(),
+  "isCurrent": zod.boolean()
+})
+
+
+/**
+ * @summary Set the school's active academic year (admin only)
+ */
+export const SetCurrentAcademicYearParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const SetCurrentAcademicYearResponse = zod.object({
+  "id": zod.number(),
+  "startYear": zod.number(),
+  "endYear": zod.number(),
+  "label": zod.string(),
+  "isCurrent": zod.boolean()
+})
+
+
+/**
  * @summary List active announcements (all authenticated users)
  */
 export const ListAnnouncementsResponseItem = zod.object({

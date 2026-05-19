@@ -31,6 +31,14 @@ export interface AuthResponse {
   admin: Admin;
 }
 
+export interface AcademicYear {
+  id: number;
+  startYear: number;
+  endYear: number;
+  label: string;
+  isCurrent: boolean;
+}
+
 export interface Announcement {
   id: number;
   title: string;

@@ -1,4 +1,5 @@
 import { Link, useLocation } from "wouter";
+import { AcademicYearSelector } from "./academic-year-selector";
 import { useLogout, useGetMe } from "@workspace/api-client-react";
 import { clearToken } from "@/lib/auth";
 import { useQueryClient } from "@tanstack/react-query";
@@ -287,12 +288,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 متصل
               </span>
             )}
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/8 border border-primary/15">
-              <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 text-primary" fill="currentColor">
-                <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
-              </svg>
-              <span className="text-xs font-semibold text-primary">2024-2025</span>
-            </div>
+            <AcademicYearSelector />
 
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">

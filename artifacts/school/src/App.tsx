@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { OfflineBanner } from "@/components/offline-banner";
 import { isAuthenticated } from "@/lib/auth";
+import { AcademicYearProvider } from "@/contexts/AcademicYearContext";
 import { refreshOfflineCache } from "@/lib/offlineSync";
 import LoginPage from "@/pages/login";
 import RegisterPage from "@/pages/register";
@@ -111,6 +112,7 @@ function CacheRefresher() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <AcademicYearProvider>
       <TooltipProvider>
         <OfflineBanner />
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
@@ -120,6 +122,7 @@ function App() {
         <Toaster />
         <PwaInstallPrompt />
       </TooltipProvider>
+      </AcademicYearProvider>
     </QueryClientProvider>
   );
 }
