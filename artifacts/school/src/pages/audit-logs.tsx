@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { Layout } from "@/components/layout";
 import { getToken } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
@@ -128,8 +128,8 @@ export default function AuditLogsPage() {
                       const meta = ACTION_META[log.action] ?? { label: log.action, cls: "bg-muted text-foreground border-border", dot: "bg-muted-foreground" };
                       const isExpanded = expandedId === log.id;
                       return (
-                        <>
-                          <tr key={log.id} className="hover:bg-muted/20 transition-colors">
+                        <Fragment key={log.id}>
+                          <tr className="hover:bg-muted/20 transition-colors">
                             <td className="px-4 py-3.5 text-xs text-muted-foreground whitespace-nowrap">{formatDate(log.createdAt)}</td>
                             <td className="px-4 py-3.5">
                               <div className="flex items-center gap-2">
@@ -163,7 +163,7 @@ export default function AuditLogsPage() {
                             </td>
                           </tr>
                           {isExpanded && (
-                            <tr key={`${log.id}-detail`} className="bg-muted/10">
+                            <tr className="bg-muted/10">
                               <td colSpan={7} className="px-4 py-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                                   {log.beforeData && (
@@ -190,7 +190,7 @@ export default function AuditLogsPage() {
                               </td>
                             </tr>
                           )}
-                        </>
+                        </Fragment>
                       );
                     })}
                   </tbody>

@@ -37,8 +37,7 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg", "icons/*.svg", "robots.txt"],
       devOptions: {
-        enabled: true,
-        type: "module",
+        enabled: false, // dev SW conflicts with @replit/vite-plugin-runtime-error-modal
       },
       manifest: {
         name: "نظام إدارة المدرسة",

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/layout";
 import {
-  useListTeachers, useCreateTeacher, useUpdateTeacher, useDeleteTeacher, getListTeachersQueryKey,
+  useListTeachers, useCreateTeacher, useUpdateTeacher, useDeleteTeacher, getListTeachersQueryKey, useGetMe,
 } from "@workspace/api-client-react";
 import type { Teacher } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -21,6 +21,8 @@ export default function TeachersPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const { data: me } = useGetMe();
+  const isAdmin = (me as any)?.role === "admin";
 
   const { data: teachers, isLoading } = useListTeachers(
     { search: search || undefined },
@@ -57,11 +59,13 @@ export default function TeachersPage() {
             <h1 className="text-2xl font-black text-foreground">المعلمون</h1>
             <p className="text-muted-foreground text-sm mt-0.5">إدارة بيانات الكادر التدريسي</p>
           </div>
-          <button onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true); }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm shadow-primary/20">
-            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            إضافة معلم
-          </button>
+          {isAdmin && (
+            <button onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true); }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm shadow-primary/20">
+              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              إضافة معلم
+            </button>
+          )}
         </div>
 
         {/* Search */}
@@ -125,10 +129,12 @@ export default function TeachersPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-1.5">
-                        <button onClick={(e) => openEdit(e, t)} className="px-3 py-1.5 rounded-lg bg-primary/8 text-primary hover:bg-primary/15 text-xs font-semibold transition-colors">تعديل</button>
-                        <button onClick={(e) => handleDelete(e, t)} className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-xs font-semibold transition-colors">حذف</button>
-                      </div>
+                      {isAdmin ? (
+                        <div className="flex items-center gap-1.5">
+                          <button onClick={(e) => openEdit(e, t)} className="px-3 py-1.5 rounded-lg bg-primary/8 text-primary hover:bg-primary/15 text-xs font-semibold transition-colors">تعديل</button>
+                          <button onClick={(e) => handleDelete(e, t)} className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-xs font-semibold transition-colors">حذف</button>
+                        </div>
+                      ) : <span className="text-xs text-muted-foreground">—</span>}
                     </td>
                   </tr>
                 ))}

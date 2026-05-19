@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Layout } from "@/components/layout";
 import {
   useListSubjects, useListTeachers, useListClasses, useCreateSubject, useUpdateSubject,
-  useDeleteSubject, getListSubjectsQueryKey,
+  useDeleteSubject, getListSubjectsQueryKey, useGetMe,
 } from "@workspace/api-client-react";
 import type { Subject } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -24,6 +24,8 @@ export default function SubjectsPage() {
   const [form, setForm] = useState<SubjectForm>(emptyForm);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { data: me } = useGetMe();
+  const isAdmin = (me as any)?.role === "admin";
 
   const { data: subjects, isLoading } = useListSubjects();
   const { data: teachers } = useListTeachers();
@@ -55,11 +57,11 @@ export default function SubjectsPage() {
             <h1 className="text-2xl font-black text-foreground">المواد الدراسية</h1>
             <p className="text-muted-foreground text-sm mt-0.5">إدارة المواد الدراسية والمناهج</p>
           </div>
-          <button onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true); }}
+          {isAdmin && <button onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true); }}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm shadow-primary/20">
             <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             إضافة مادة
-          </button>
+          </button>}
         </div>
 
         {/* Table */}
@@ -103,10 +105,12 @@ export default function SubjectsPage() {
                     </td>
                     <td className="px-4 py-3.5 text-muted-foreground text-xs max-w-[150px] truncate">{s.description ?? "—"}</td>
                     <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-1.5">
-                        <button onClick={() => openEdit(s)} className="px-3 py-1.5 rounded-lg bg-primary/8 text-primary hover:bg-primary/15 text-xs font-semibold transition-colors">تعديل</button>
-                        <button onClick={() => { if (confirm("حذف هذه المادة؟")) deleteMutation.mutate({ id: s.id }); }} className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-xs font-semibold transition-colors">حذف</button>
-                      </div>
+                      {isAdmin ? (
+                        <div className="flex items-center gap-1.5">
+                          <button onClick={() => openEdit(s)} className="px-3 py-1.5 rounded-lg bg-primary/8 text-primary hover:bg-primary/15 text-xs font-semibold transition-colors">تعديل</button>
+                          <button onClick={() => { if (confirm("حذف هذه المادة؟")) deleteMutation.mutate({ id: s.id }); }} className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-xs font-semibold transition-colors">حذف</button>
+                        </div>
+                      ) : <span className="text-xs text-muted-foreground">—</span>}
                     </td>
                   </tr>
                 ))}

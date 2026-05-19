@@ -6,6 +6,7 @@ import {
   useListTeachers,
   useUpdateClass,
   getListClassesQueryKey,
+  useGetMe,
 } from "@workspace/api-client-react";
 import type { Class } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -51,6 +52,8 @@ export default function ClassesPage() {
   const [form, setForm] = useState<EditForm>({ teacherId: "", capacity: "35", academicYear: "2024-2025", room: "" });
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { data: me } = useGetMe();
+  const isAdmin = (me as any)?.role === "admin";
 
   const { data: classes, isLoading } = useListClasses();
   const { data: teachers } = useListTeachers();
@@ -220,13 +223,15 @@ export default function ClassesPage() {
                             />
                           </div>
 
-                          {/* Edit button */}
-                          <button
-                            className="pointer-events-auto mt-2 w-full text-xs py-1 rounded bg-white/60 hover:bg-white border border-current/20 font-medium transition-colors"
-                            onClick={(e) => { e.preventDefault(); openEdit(c); }}
-                          >
-                            تعديل
-                          </button>
+                          {/* Edit button — admin only */}
+                          {isAdmin && (
+                            <button
+                              className="pointer-events-auto mt-2 w-full text-xs py-1 rounded bg-white/60 hover:bg-white border border-current/20 font-medium transition-colors"
+                              onClick={(e) => { e.preventDefault(); openEdit(c); }}
+                            >
+                              تعديل
+                            </button>
+                          )}
                         </div>
                       </div>
                     );

@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { Layout } from "@/components/layout";
 import {
   useListStudents, useListClasses, useCreateStudent, useUpdateStudent,
-  useDeleteStudent, getListStudentsQueryKey,
+  useDeleteStudent, getListStudentsQueryKey, useGetMe,
 } from "@workspace/api-client-react";
 import type { Student } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -43,6 +43,8 @@ export default function StudentsPage() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const { isOnline } = useNetworkStatus();
+  const { data: me } = useGetMe();
+  const isAdmin = (me as any)?.role === "admin";
 
   const params = { search: search || undefined, classId: classFilter ? Number(classFilter) : undefined };
   const { data: students, isLoading, isError } = useListStudents(params, { query: { queryKey: getListStudentsQueryKey(params) } });
@@ -119,12 +121,14 @@ export default function StudentsPage() {
                 بيانات محلية
               </span>
             )}
-            <button onClick={openAdd} disabled={!isOnline}
-              title={!isOnline ? "الإضافة تتطلب اتصالاً بالإنترنت" : undefined}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed">
-              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              إضافة طالب
-            </button>
+            {isAdmin && (
+              <button onClick={openAdd} disabled={!isOnline}
+                title={!isOnline ? "الإضافة تتطلب اتصالاً بالإنترنت" : undefined}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                إضافة طالب
+              </button>
+            )}
           </div>
         </div>
 
@@ -213,7 +217,7 @@ export default function StudentsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3.5">
-                      {!isOfflineFallback ? (
+                      {isAdmin && !isOfflineFallback ? (
                         <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                           <button onClick={() => openEdit(s)}
                             className="px-3 py-1.5 rounded-lg bg-primary/8 text-primary hover:bg-primary/15 text-xs font-semibold transition-colors">

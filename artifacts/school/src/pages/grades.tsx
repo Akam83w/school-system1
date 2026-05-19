@@ -45,6 +45,7 @@ export default function GradesPage() {
   const { toast } = useToast();
   const { data: me } = useGetMe();
   const isAdmin = (me as any)?.role === "admin";
+  const canRecord = ["admin", "teacher"].includes((me as any)?.role ?? "");
   const { isOnline, pendingCount } = useNetworkStatus();
 
   const params = { classId: classFilter ? Number(classFilter) : undefined, subjectId: subjectFilter ? Number(subjectFilter) : undefined, studentId: studentFilter ? Number(studentFilter) : undefined, academicYear: yearFilter || undefined, examType: examTypeFilter || undefined };
@@ -152,11 +153,13 @@ export default function GradesPage() {
                 وضع غير متصل
               </span>
             )}
-            <button onClick={() => { setForm(emptyForm); setShowForm(true); }}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm shadow-primary/20">
-              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              تسجيل درجة
-            </button>
+            {canRecord && (
+              <button onClick={() => { setForm(emptyForm); setShowForm(true); }}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm shadow-primary/20">
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                تسجيل درجة
+              </button>
+            )}
           </div>
         </div>
 
