@@ -4,6 +4,7 @@ import { clearToken } from "@/lib/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 
 const DashboardIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-[18px] h-[18px]">
@@ -106,6 +107,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const logoutMutation = useLogout();
   const { data: me } = useGetMe();
+  const { isOnline, pendingCount, isSyncing } = useNetworkStatus();
 
   const currentRole = (me as any)?.role ?? "";
   const currentName = (me as any)?.name ?? "";
@@ -244,8 +246,30 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          {/* Right side: academic year + user */}
+          {/* Right side: network status + academic year + user */}
           <div className="flex items-center gap-3">
+            {/* Network status pill */}
+            {isSyncing ? (
+              <span className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-xs font-semibold text-blue-600">
+                <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="60" strokeDashoffset="20"/></svg>
+                مزامنة...
+              </span>
+            ) : !isOnline ? (
+              <span className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-700">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                غير متصل{pendingCount > 0 ? ` · ${pendingCount}` : ''}
+              </span>
+            ) : pendingCount > 0 ? (
+              <span className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-xs font-semibold text-blue-600">
+                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                {pendingCount} معلق
+              </span>
+            ) : (
+              <span className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                متصل
+              </span>
+            )}
             <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/8 border border-primary/15">
               <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 text-primary" fill="currentColor">
                 <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>

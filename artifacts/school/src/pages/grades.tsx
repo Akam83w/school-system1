@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Layout } from "@/components/layout";
 import {
   useListGrades, useListStudents, useListSubjects, useListClasses,
@@ -7,6 +7,9 @@ import {
 import type { Grade } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { enqueueAction, getOfflineActionsForEntity } from "@/lib/offlineSync";
+import type { OfflineAction } from "@/lib/offlineDb";
 
 const EXAM_TYPES = ["اختبار الشهر الأول", "اختبار الشهر الثاني", "امتحان نصف السنة", "الامتحان النهائي", "امتحانات مستمرة", "واجب بيتي"];
 const CURRENT_YEAR = "2024-2025";
@@ -14,6 +17,10 @@ const ACADEMIC_YEARS = ["2024-2025", "2023-2024", "2022-2023", "2021-2022"];
 
 type GradeForm = { studentId: string; subjectId: string; classId: string; score: string; maxScore: string; examType: string; examDate: string; academicYear: string; notes: string };
 const emptyForm: GradeForm = { studentId: "", subjectId: "", classId: "", score: "", maxScore: "100", examType: EXAM_TYPES[0], examDate: new Date().toISOString().split("T")[0], academicYear: CURRENT_YEAR, notes: "" };
+
+function getBase() {
+  return (import.meta.env.BASE_URL as string).replace(/\/$/, '');
+}
 
 function getGradeStyle(pct: number) {
   if (pct >= 90) return { cls: "text-emerald-600 font-black", badge: "bg-emerald-50 text-emerald-700 border-emerald-200" };
@@ -33,10 +40,12 @@ export default function GradesPage() {
   const [examTypeFilter, setExamTypeFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<GradeForm>(emptyForm);
+  const [offlinePending, setOfflinePending] = useState<OfflineAction[]>([]);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: me } = useGetMe();
   const isAdmin = (me as any)?.role === "admin";
+  const { isOnline, pendingCount } = useNetworkStatus();
 
   const params = { classId: classFilter ? Number(classFilter) : undefined, subjectId: subjectFilter ? Number(subjectFilter) : undefined, studentId: studentFilter ? Number(studentFilter) : undefined, academicYear: yearFilter || undefined, examType: examTypeFilter || undefined };
   const { data: grades, isLoading } = useListGrades(params, { query: { queryKey: getListGradesQueryKey(params) } });
@@ -46,15 +55,73 @@ export default function GradesPage() {
 
   const createMutation = useCreateGrade({
     mutation: {
-      onSuccess: () => { queryClient.invalidateQueries({ queryKey: getListGradesQueryKey() }); setShowForm(false); setForm(emptyForm); toast({ title: "✓ تم تسجيل الدرجة" }); },
-      onError: (err: any) => { toast({ title: "فشل التسجيل", description: err?.response?.data?.error ?? "حدث خطأ", variant: "destructive" }); },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListGradesQueryKey() });
+        setShowForm(false);
+        setForm(emptyForm);
+        toast({ title: "✓ تم تسجيل الدرجة" });
+      },
+      onError: (err: any) => {
+        toast({ title: "فشل التسجيل", description: err?.response?.data?.error ?? "حدث خطأ", variant: "destructive" });
+      },
     },
   });
   const deleteMutation = useDeleteGrade({ mutation: { onSuccess: () => { queryClient.invalidateQueries({ queryKey: getListGradesQueryKey() }); toast({ title: "تم حذف الدرجة" }); } } });
 
-  function handleSubmit(e: React.FormEvent) {
+  const loadOfflinePending = useCallback(async () => {
+    const items = await getOfflineActionsForEntity('grade');
+    setOfflinePending(items);
+  }, []);
+
+  useEffect(() => { loadOfflinePending(); }, [loadOfflinePending, pendingCount]);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    createMutation.mutate({ data: { studentId: Number(form.studentId), subjectId: Number(form.subjectId), classId: Number(form.classId), score: Number(form.score), maxScore: Number(form.maxScore), examType: form.examType, examDate: form.examDate, academicYear: form.academicYear, notes: form.notes } });
+    const payload = {
+      studentId: Number(form.studentId),
+      subjectId: Number(form.subjectId),
+      classId: Number(form.classId),
+      score: Number(form.score),
+      maxScore: Number(form.maxScore),
+      examType: form.examType,
+      examDate: form.examDate,
+      academicYear: form.academicYear,
+      notes: form.notes,
+    };
+
+    if (!isOnline) {
+      const studentName = (students ?? []).find(s => s.id === Number(form.studentId))?.fullName ?? '';
+      const subjectName = (subjects ?? []).find(s => s.id === Number(form.subjectId))?.name ?? '';
+      const className = (classes ?? []).find(c => c.id === Number(form.classId))?.name ?? '';
+      const pct = Math.round((Number(form.score) / Number(form.maxScore)) * 100);
+
+      await enqueueAction({
+        tempId: `grade-${Date.now()}`,
+        method: 'POST',
+        url: `${getBase()}/api/grades`,
+        body: payload as Record<string, unknown>,
+        entity: 'grade',
+        displayLabel: `درجة ${studentName} في ${subjectName}: ${form.score}/${form.maxScore}`,
+        localData: {
+          studentName,
+          subjectName,
+          className,
+          score: Number(form.score),
+          maxScore: Number(form.maxScore),
+          pct,
+          examType: form.examType,
+          examDate: form.examDate,
+          academicYear: form.academicYear,
+          notes: form.notes,
+        },
+      });
+      toast({ title: "✓ تم الحفظ محلياً", description: "سيُزامَن تلقائياً عند عودة الاتصال" });
+      setShowForm(false);
+      setForm(emptyForm);
+      await loadOfflinePending();
+    } else {
+      createMutation.mutate({ data: payload });
+    }
   }
 
   const gradesByYear = (grades ?? []).reduce<Record<string, Grade[]>>((acc, g) => {
@@ -65,6 +132,7 @@ export default function GradesPage() {
   }, {});
   const yearKeys = Object.keys(gradesByYear).sort().reverse();
   const hasFilters = yearFilter !== CURRENT_YEAR || examTypeFilter || classFilter || subjectFilter || studentFilter;
+  const totalCount = (grades ?? []).length + offlinePending.length;
 
   return (
     <Layout>
@@ -74,14 +142,22 @@ export default function GradesPage() {
           <div>
             <h1 className="text-2xl font-black text-foreground">سجل الدرجات</h1>
             <p className="text-muted-foreground text-sm mt-0.5">
-              {isLoading ? "جاري التحميل..." : `${(grades ?? []).length} درجة مسجّلة`}
+              {isLoading ? "جاري التحميل..." : `${totalCount} درجة مسجّلة${offlinePending.length > 0 ? ` (${offlinePending.length} معلقة)` : ''}`}
             </p>
           </div>
-          <button onClick={() => { setForm(emptyForm); setShowForm(true); }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm shadow-primary/20">
-            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            تسجيل درجة
-          </button>
+          <div className="flex items-center gap-2">
+            {!isOnline && (
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 text-xs font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                وضع غير متصل
+              </span>
+            )}
+            <button onClick={() => { setForm(emptyForm); setShowForm(true); }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm shadow-primary/20">
+              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              تسجيل درجة
+            </button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -114,6 +190,60 @@ export default function GradesPage() {
           </div>
         </div>
 
+        {/* Offline pending section */}
+        {offlinePending.length > 0 && (
+          <div className="bg-amber-50 rounded-xl border border-amber-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-amber-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                <span className="text-sm font-bold text-amber-800">درجات معلقة — في انتظار الاتصال</span>
+              </div>
+              <span className="text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-lg">{offlinePending.length} سجل</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-amber-200 bg-amber-50/50">
+                    {["الطالب", "المادة", "الصف", "الدرجة", "النسبة", "نوع الامتحان", "التاريخ", "الحالة"].map((h) => (
+                      <th key={h} className="text-right px-4 py-2.5 text-xs font-semibold text-amber-700 uppercase tracking-wide">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-amber-100">
+                  {offlinePending.map((action) => {
+                    const d = action.localData ?? {};
+                    const score = Number(d.score ?? 0);
+                    const maxScore = Number(d.maxScore ?? 100);
+                    const pct = Math.round((score / maxScore) * 100);
+                    const style = getGradeStyle(pct);
+                    return (
+                      <tr key={action.tempId} className="bg-amber-50/30">
+                        <td className="px-4 py-3 font-semibold text-amber-900">{String(d.studentName ?? '—')}</td>
+                        <td className="px-4 py-3 text-amber-800">{String(d.subjectName ?? '—')}</td>
+                        <td className="px-4 py-3 text-amber-700 text-xs">{String(d.className ?? '—')}</td>
+                        <td className="px-4 py-3 font-mono">
+                          <span className="font-bold">{score}</span>
+                          <span className="text-amber-600 text-xs">/{maxScore}</span>
+                        </td>
+                        <td className="px-4 py-3"><span className={`text-sm ${style.cls}`}>{pct}%</span></td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${style.badge}`}>{String(d.examType ?? '—')}</span>
+                        </td>
+                        <td className="px-4 py-3 text-amber-700 text-xs font-mono">{String(d.examDate ?? '—')}</td>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+                            ⏳ معلق
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Loading */}
         {isLoading && (
           <div className="space-y-3">
@@ -122,22 +252,23 @@ export default function GradesPage() {
         )}
 
         {/* Empty */}
-        {!isLoading && (grades ?? []).length === 0 && (
+        {!isLoading && (grades ?? []).length === 0 && offlinePending.length === 0 && (
           <div className="bg-white rounded-xl border border-border p-16 text-center shadow-sm">
             <p className="text-4xl mb-3">📝</p>
             <p className="font-semibold text-foreground mb-1">لا توجد درجات مسجّلة</p>
-            <p className="text-sm text-muted-foreground">ابدأ بتسجيل درجات الطلاب</p>
+            <p className="text-sm text-muted-foreground">
+              {!isOnline ? "أنت في وضع عدم الاتصال — يمكنك تسجيل الدرجات وستُحفظ محلياً" : "ابدأ بتسجيل درجات الطلاب"}
+            </p>
           </div>
         )}
 
-        {/* Grouped by year */}
+        {/* Grouped by year (server data) */}
         {!isLoading && yearKeys.map((year) => {
           const yearGrades = gradesByYear[year];
           const avg = yearGrades.length > 0 ? Math.round(yearGrades.reduce((s, g) => s + (g.score / g.maxScore) * 100, 0) / yearGrades.length) : null;
           const avgStyle = avg !== null ? getGradeStyle(avg) : null;
           return (
             <div key={year} className="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
-              {/* Year header */}
               <div className="px-5 py-3.5 border-b border-border bg-muted/30 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-6 bg-primary rounded-full" />
@@ -203,7 +334,9 @@ export default function GradesPage() {
             <div className="sticky top-0 bg-white border-b border-border px-6 py-4 flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold">تسجيل درجة جديدة</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">الدرجات محفوظة كسجلات تاريخية دائمة</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {isOnline ? "الدرجات محفوظة كسجلات تاريخية دائمة" : "⚡ سيُحفظ محلياً ويُزامَن لاحقاً"}
+                </p>
               </div>
               <button onClick={() => setShowForm(false)} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground transition-colors">
                 <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -267,8 +400,9 @@ export default function GradesPage() {
                 <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className={inputCls} placeholder="اختياري" />
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="submit" disabled={createMutation.isPending} className="flex-1 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 disabled:opacity-60 shadow-sm transition-all">
-                  {createMutation.isPending ? "جاري الحفظ..." : "تسجيل الدرجة"}
+                <button type="submit" disabled={createMutation.isPending}
+                  className="flex-1 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 disabled:opacity-60 shadow-sm transition-all">
+                  {createMutation.isPending ? "جاري الحفظ..." : isOnline ? "تسجيل الدرجة" : "حفظ محلياً ⚡"}
                 </button>
                 <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-colors">إلغاء</button>
               </div>

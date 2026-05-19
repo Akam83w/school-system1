@@ -1,4 +1,5 @@
 import "./lib/auth";
+import { useEffect } from "react";
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -6,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { OfflineBanner } from "@/components/offline-banner";
 import { isAuthenticated } from "@/lib/auth";
+import { refreshOfflineCache } from "@/lib/offlineSync";
 import LoginPage from "@/pages/login";
 import RegisterPage from "@/pages/register";
 import AuditLogsPage from "@/pages/audit-logs";
@@ -22,7 +24,20 @@ import GradesPage from "@/pages/grades";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: 1 } },
+  defaultOptions: {
+    queries: {
+      retry: (failureCount: number) => {
+        if (!navigator.onLine) return false;
+        return failureCount < 2;
+      },
+      staleTime: 60 * 1000,
+      gcTime: 24 * 60 * 60 * 1000,
+      networkMode: "offlineFirst",
+    },
+    mutations: {
+      networkMode: "always",
+    },
+  },
 });
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
@@ -76,12 +91,22 @@ function Router() {
   );
 }
 
+function CacheRefresher() {
+  useEffect(() => {
+    if (isAuthenticated()) {
+      refreshOfflineCache().catch(() => {});
+    }
+  }, []);
+  return null;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <OfflineBanner />
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+          <CacheRefresher />
           <Router />
         </WouterRouter>
         <Toaster />
