@@ -10,8 +10,9 @@ export interface HealthStatus {
 }
 
 export interface LoginInput {
-  username: string;
+  identifier: string;
   password: string;
+  role?: string;
 }
 
 export interface Admin {
@@ -28,6 +29,37 @@ export interface Admin {
 export interface AuthResponse {
   token: string;
   admin: Admin;
+}
+
+export interface Announcement {
+  id: number;
+  title: string;
+  body: string;
+  type: string;
+  authorId: number;
+  authorName: string;
+  isPinned: boolean;
+  /** @nullable */
+  expiresAt?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface AnnouncementInput {
+  title: string;
+  body: string;
+  type?: string;
+  isPinned?: boolean;
+  expiresAt?: string;
+}
+
+export interface AnnouncementUpdate {
+  title?: string;
+  body?: string;
+  type?: string;
+  isPinned?: boolean;
+  /** @nullable */
+  expiresAt?: string | null;
 }
 
 export interface SystemUser {
@@ -62,6 +94,8 @@ export interface Student {
   id: number;
   fullName: string;
   studentCode: string;
+  /** @nullable */
+  nationalId?: string | null;
   classId: number;
   className: string;
   gender: string;
@@ -80,6 +114,7 @@ export interface Student {
 
 export interface StudentInput {
   fullName: string;
+  nationalId?: string;
   classId: number;
   gender: string;
   dateOfBirth: string;
@@ -92,6 +127,7 @@ export interface StudentInput {
 
 export interface StudentUpdate {
   fullName?: string;
+  nationalId?: string;
   classId?: number;
   gender?: string;
   dateOfBirth?: string;

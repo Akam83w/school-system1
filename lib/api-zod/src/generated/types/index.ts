@@ -8,6 +8,9 @@
 
 export * from './activity';
 export * from './admin';
+export * from './announcement';
+export * from './announcementInput';
+export * from './announcementUpdate';
 export * from './attendance';
 export * from './attendanceInput';
 export * from './attendanceSummary';

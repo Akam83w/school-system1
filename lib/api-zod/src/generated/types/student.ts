@@ -10,6 +10,8 @@ export interface Student {
   id: number;
   fullName: string;
   studentCode: string;
+  /** @nullable */
+  nationalId?: string | null;
   classId: number;
   className: string;
   gender: string;

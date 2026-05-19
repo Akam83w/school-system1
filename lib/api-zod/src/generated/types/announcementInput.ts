@@ -6,8 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface LoginInput {
-  identifier: string;
-  password: string;
-  role?: string;
+export interface AnnouncementInput {
+  title: string;
+  body: string;
+  type?: string;
+  isPinned?: boolean;
+  expiresAt?: string;
 }

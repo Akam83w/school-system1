@@ -17,6 +17,7 @@ router.get("/users", requireAuth, requireAdmin, async (_req, res) => {
       name: adminsTable.name,
       role: adminsTable.role,
       phone: adminsTable.phone,
+      email: adminsTable.email,
       linkedId: adminsTable.linkedId,
       createdAt: adminsTable.createdAt,
     })
@@ -28,10 +29,12 @@ router.get("/users", requireAuth, requireAdmin, async (_req, res) => {
 // POST /users — admin only: create a new user account with a specific role
 router.post("/users", requireAuth, requireAdmin, async (req, res) => {
   const caller = (req as any).user as AuthUser;
-  const { name, username, phone, password, role, linkedId } = req.body;
+  const { name, username, phone, email, password, role, linkedId } = req.body;
 
   if (!name || !username || !phone || !password || !role) {
-    res.status(400).json({ error: "الاسم الكامل واسم المستخدم ورقم الهاتف وكلمة المرور والدور مطلوبة" });
+    res.status(400).json({
+      error: "الاسم الكامل واسم المستخدم ورقم الهاتف وكلمة المرور والدور مطلوبة",
+    });
     return;
   }
 
@@ -53,6 +56,7 @@ router.post("/users", requireAuth, requireAdmin, async (req, res) => {
 
   const phoneStr = String(phone).trim();
   const usernameStr = String(username).trim();
+  const emailStr = email ? String(email).trim().toLowerCase() : null;
 
   const [usernameExists] = await db
     .select({ id: adminsTable.id })
@@ -74,13 +78,14 @@ router.post("/users", requireAuth, requireAdmin, async (req, res) => {
     return;
   }
 
-  const passwordHash = hashPassword(String(password));
+  const passwordHash = await hashPassword(String(password));
   const [newUser] = await db
     .insert(adminsTable)
     .values({
       name: String(name).trim(),
       username: usernameStr,
       phone: phoneStr,
+      email: emailStr,
       passwordHash,
       role: String(role),
       linkedId: linkedId != null ? Number(linkedId) : null,
@@ -103,28 +108,27 @@ router.post("/users", requireAuth, requireAdmin, async (req, res) => {
     name: newUser.name,
     role: newUser.role,
     phone: newUser.phone,
+    email: newUser.email,
     linkedId: newUser.linkedId ?? null,
     createdAt: newUser.createdAt,
   });
 });
 
-// PATCH /users/:id — admin only: update role, linkedId, or name
+// PATCH /users/:id — admin only: update role, linkedId, name, or email
 router.patch("/users/:id", requireAuth, requireAdmin, async (req, res) => {
   const caller = (req as any).user as AuthUser;
   const targetId = Number(req.params.id);
 
-  const [before] = await db
-    .select()
-    .from(adminsTable)
-    .where(eq(adminsTable.id, targetId));
+  const [before] = await db.select().from(adminsTable).where(eq(adminsTable.id, targetId));
   if (!before) {
     res.status(404).json({ error: "المستخدم غير موجود" });
     return;
   }
 
-  const { name, role, linkedId } = req.body;
+  const { name, role, linkedId, email } = req.body;
   const updates: Record<string, unknown> = {};
   if (name !== undefined) updates.name = String(name).trim();
+  if (email !== undefined) updates.email = email ? String(email).trim().toLowerCase() : null;
   if (role !== undefined) {
     if (!["admin", "teacher", "student"].includes(String(role))) {
       res.status(400).json({ error: "الدور غير صالح" });
@@ -164,6 +168,7 @@ router.patch("/users/:id", requireAuth, requireAdmin, async (req, res) => {
     name: row.name,
     role: row.role,
     phone: row.phone,
+    email: row.email,
     linkedId: row.linkedId ?? null,
     createdAt: row.createdAt,
   });
@@ -179,10 +184,7 @@ router.delete("/users/:id", requireAuth, requireAdmin, async (req, res) => {
     return;
   }
 
-  const [before] = await db
-    .select()
-    .from(adminsTable)
-    .where(eq(adminsTable.id, targetId));
+  const [before] = await db.select().from(adminsTable).where(eq(adminsTable.id, targetId));
   if (!before) {
     res.status(404).json({ error: "المستخدم غير موجود" });
     return;

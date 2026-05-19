@@ -11,6 +11,7 @@ export default function RegisterPage() {
     name: "",
     username: "",
     phone: "",
+    email: "",
     password: "",
     confirmPassword: "",
   });
@@ -48,8 +49,9 @@ export default function RegisterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: form.name.trim(),
-          username: form.username,
+          username: form.username.trim(),
           phone: form.phone.trim(),
+          email: form.email.trim() || undefined,
           password: form.password,
         }),
       });
@@ -57,8 +59,8 @@ export default function RegisterPage() {
       if (!res.ok) {
         if (res.status === 403) {
           toast({
-            title: "تسجيل جديد محظور",
-            description: "يتم إنشاء الحسابات الجديدة من قِبَل مدير النظام فقط. تواصل مع المدير للحصول على حسابك.",
+            title: "التسجيل محظور",
+            description: "يتم إنشاء الحسابات الجديدة من قِبَل مدير النظام فقط.",
             variant: "destructive",
           });
         } else {
@@ -67,9 +69,8 @@ export default function RegisterPage() {
         return;
       }
       setRegistered(true);
-      toast({ title: "تم إعداد حساب المدير بنجاح", description: "يمكنك الآن تسجيل الدخول" });
     } catch {
-      toast({ title: "خطأ في الاتصال", description: "تعذّر الاتصال بالخادم، حاول مرة أخرى", variant: "destructive" });
+      toast({ title: "خطأ في الاتصال", description: "تعذّر الاتصال بالخادم", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -88,7 +89,7 @@ export default function RegisterPage() {
             </svg>
           </div>
           <h2 className="text-xl font-black text-foreground mb-2">تم إنشاء حساب المدير</h2>
-          <p className="text-muted-foreground text-sm mb-6">يمكنك الآن تسجيل الدخول وإدارة حسابات المعلمين والطلاب من لوحة التحكم.</p>
+          <p className="text-muted-foreground text-sm mb-6">يمكنك الآن تسجيل الدخول وإدارة حسابات المعلمين والطلاب.</p>
           <Link href="/login">
             <button className="px-6 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-md shadow-primary/20">
               تسجيل الدخول
@@ -104,11 +105,10 @@ export default function RegisterPage() {
       <div className="w-full max-w-lg">
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary text-white text-2xl font-bold shadow-lg shadow-primary/20 mb-3">م</div>
-          <h1 className="text-2xl font-black text-foreground">إعداد حساب المدير</h1>
-          <p className="text-muted-foreground text-sm mt-1">هذا النموذج مخصص لإنشاء حساب المدير الأول فقط</p>
+          <h1 className="text-2xl font-black text-foreground">إعداد حساب المدير الأول</h1>
+          <p className="text-muted-foreground text-sm mt-1">هذا النموذج مخصص لإنشاء الحساب الإداري الأول فقط</p>
         </div>
 
-        {/* Admin-only notice */}
         <div className="mb-5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
           <svg viewBox="0 0 24 24" className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2}>
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -116,7 +116,7 @@ export default function RegisterPage() {
           </svg>
           <div>
             <p className="text-sm font-semibold text-amber-800">إنشاء حسابات المعلمين والطلاب</p>
-            <p className="text-xs text-amber-700 mt-0.5">بعد تسجيل الدخول كمدير، يمكنك إنشاء حسابات المعلمين والطلاب من صفحة إدارة المستخدمين. لا يُسمح للمستخدمين بتسجيل حسابات بأنفسهم.</p>
+            <p className="text-xs text-amber-700 mt-0.5">بعد تسجيل الدخول كمدير، أنشئ حسابات المعلمين والطلاب من صفحة "إدارة المستخدمين". المعلم يدخل برقم موظفه، والطالب بالرقم الوطني.</p>
           </div>
         </div>
 
@@ -127,39 +127,40 @@ export default function RegisterPage() {
                 الاسم الكامل <span className="text-destructive">*</span>
                 <span className="text-muted-foreground text-xs font-normal mr-1">(ثلاثة أسماء على الأقل)</span>
               </label>
-              <input
-                type="text" name="name" value={form.name} onChange={handleChange}
-                className={`${inputCls} ${nameError ? "border-destructive ring-2 ring-destructive/20" : ""}`}
-                placeholder="مثال: أحمد محمد علي الجبوري" required
-              />
-              {nameError && <p className="text-xs text-destructive mt-1 flex items-center gap-1">⚠ {nameError}</p>}
+              <input type="text" name="name" value={form.name} onChange={handleChange}
+                className={`${inputCls} ${nameError ? "border-destructive" : ""}`}
+                placeholder="أحمد محمد علي الجبوري" required />
+              {nameError && <p className="text-xs text-destructive mt-1">⚠ {nameError}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold mb-1.5">اسم المستخدم <span className="text-destructive">*</span></label>
-                <input
-                  type="text" name="username" value={form.username} onChange={handleChange}
-                  className={inputCls} placeholder="مثال: admin123" required
-                />
+                <input type="text" name="username" value={form.username} onChange={handleChange}
+                  className={inputCls} placeholder="admin123" required autoComplete="username" />
               </div>
               <div>
                 <label className="block text-sm font-semibold mb-1.5">رقم الهاتف <span className="text-destructive">*</span></label>
-                <input
-                  type="tel" name="phone" value={form.phone} onChange={handleChange}
-                  className={inputCls} placeholder="07XXXXXXXXX" required dir="ltr"
-                />
+                <input type="tel" name="phone" value={form.phone} onChange={handleChange}
+                  className={inputCls} placeholder="07XXXXXXXXX" required dir="ltr" />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-1.5">
+                البريد الإلكتروني
+                <span className="text-muted-foreground text-xs font-normal mr-1">(اختياري — للدخول بالبريد)</span>
+              </label>
+              <input type="email" name="email" value={form.email} onChange={handleChange}
+                className={inputCls} placeholder="admin@school.iq" dir="ltr" autoComplete="email" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold mb-1.5">كلمة المرور <span className="text-destructive">*</span></label>
                 <div className="relative">
-                  <input
-                    type={showPass ? "text" : "password"} name="password" value={form.password} onChange={handleChange}
-                    className={`${inputCls} pl-9`} placeholder="6 أحرف على الأقل" required minLength={6}
-                  />
+                  <input type={showPass ? "text" : "password"} name="password" value={form.password} onChange={handleChange}
+                    className={`${inputCls} pl-9`} placeholder="6 أحرف على الأقل" required minLength={6} autoComplete="new-password" />
                   <button type="button" onClick={() => setShowPass(!showPass)} tabIndex={-1}
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                     <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2}>
@@ -172,19 +173,15 @@ export default function RegisterPage() {
               </div>
               <div>
                 <label className="block text-sm font-semibold mb-1.5">تأكيد كلمة المرور <span className="text-destructive">*</span></label>
-                <input
-                  type="password" name="confirmPassword" value={form.confirmPassword} onChange={handleChange}
-                  className={`${inputCls} ${passwordMismatch ? "border-destructive ring-2 ring-destructive/20" : ""}`}
-                  placeholder="أعد الإدخال" required
-                />
+                <input type="password" name="confirmPassword" value={form.confirmPassword} onChange={handleChange}
+                  className={`${inputCls} ${passwordMismatch ? "border-destructive" : ""}`}
+                  placeholder="أعد الإدخال" required autoComplete="new-password" />
                 {passwordMismatch && <p className="text-xs text-destructive mt-1">⚠ غير متطابقتين</p>}
               </div>
             </div>
 
-            <button
-              type="submit" disabled={isLoading}
-              className="w-full py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-md shadow-primary/20"
-            >
+            <button type="submit" disabled={isLoading}
+              className="w-full py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-60 shadow-md shadow-primary/20">
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">

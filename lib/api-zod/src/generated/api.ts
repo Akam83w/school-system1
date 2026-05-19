@@ -20,8 +20,9 @@ export const HealthCheckResponse = zod.object({
  * @summary Admin login
  */
 export const LoginBody = zod.object({
-  "username": zod.string(),
-  "password": zod.string()
+  "identifier": zod.string(),
+  "password": zod.string(),
+  "role": zod.string().optional()
 })
 
 export const LoginResponse = zod.object({
@@ -62,6 +63,7 @@ export const ListStudentsResponseItem = zod.object({
   "id": zod.number(),
   "fullName": zod.string(),
   "studentCode": zod.string(),
+  "nationalId": zod.string().nullish(),
   "classId": zod.number(),
   "className": zod.string(),
   "gender": zod.string(),
@@ -81,6 +83,7 @@ export const ListStudentsResponse = zod.array(ListStudentsResponseItem)
  */
 export const CreateStudentBody = zod.object({
   "fullName": zod.string(),
+  "nationalId": zod.string().optional(),
   "classId": zod.number(),
   "gender": zod.string(),
   "dateOfBirth": zod.string(),
@@ -103,6 +106,7 @@ export const GetStudentResponse = zod.object({
   "id": zod.number(),
   "fullName": zod.string(),
   "studentCode": zod.string(),
+  "nationalId": zod.string().nullish(),
   "classId": zod.number(),
   "className": zod.string(),
   "gender": zod.string(),
@@ -125,6 +129,7 @@ export const UpdateStudentParams = zod.object({
 
 export const UpdateStudentBody = zod.object({
   "fullName": zod.string().optional(),
+  "nationalId": zod.string().optional(),
   "classId": zod.number().optional(),
   "gender": zod.string().optional(),
   "dateOfBirth": zod.string().optional(),
@@ -139,6 +144,7 @@ export const UpdateStudentResponse = zod.object({
   "id": zod.number(),
   "fullName": zod.string(),
   "studentCode": zod.string(),
+  "nationalId": zod.string().nullish(),
   "classId": zod.number(),
   "className": zod.string(),
   "gender": zod.string(),
@@ -604,6 +610,73 @@ export const GetRecentActivityResponseItem = zod.object({
   "entityName": zod.string().nullish()
 })
 export const GetRecentActivityResponse = zod.array(GetRecentActivityResponseItem)
+
+
+/**
+ * @summary List active announcements (all authenticated users)
+ */
+export const ListAnnouncementsResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "type": zod.string(),
+  "authorId": zod.number(),
+  "authorName": zod.string(),
+  "isPinned": zod.boolean(),
+  "expiresAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+export const ListAnnouncementsResponse = zod.array(ListAnnouncementsResponseItem)
+
+
+/**
+ * @summary Create an announcement (admin only)
+ */
+export const CreateAnnouncementBody = zod.object({
+  "title": zod.string(),
+  "body": zod.string(),
+  "type": zod.string().optional(),
+  "isPinned": zod.boolean().optional(),
+  "expiresAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Update an announcement (admin only)
+ */
+export const UpdateAnnouncementParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateAnnouncementBody = zod.object({
+  "title": zod.string().optional(),
+  "body": zod.string().optional(),
+  "type": zod.string().optional(),
+  "isPinned": zod.boolean().optional(),
+  "expiresAt": zod.string().nullish()
+})
+
+export const UpdateAnnouncementResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "type": zod.string(),
+  "authorId": zod.number(),
+  "authorName": zod.string(),
+  "isPinned": zod.boolean(),
+  "expiresAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Delete an announcement (admin only)
+ */
+export const DeleteAnnouncementParams = zod.object({
+  "id": zod.coerce.number()
+})
 
 
 /**

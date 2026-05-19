@@ -34,7 +34,6 @@ router.get("/students", requireAuth, async (req, res) => {
       .where(eq(classesTable.teacherId, user.linkedId));
     const classIds = teacherClasses.map(c => c.id);
     if (classIds.length === 0) { res.json([]); return; }
-    // If teacher also filtered by classId, intersect
     if (classId && classIds.includes(Number(classId))) {
       conditions.push(eq(studentsTable.classId, Number(classId)));
     } else if (classId) {
@@ -43,7 +42,6 @@ router.get("/students", requireAuth, async (req, res) => {
       conditions.push(inArray(studentsTable.classId, classIds));
     }
   } else {
-    // admin: apply optional filters directly
     if (classId) conditions.push(eq(studentsTable.classId, Number(classId)));
   }
 
@@ -61,6 +59,7 @@ router.get("/students", requireAuth, async (req, res) => {
       id: studentsTable.id,
       fullName: studentsTable.fullName,
       studentCode: studentsTable.studentCode,
+      nationalId: studentsTable.nationalId,
       classId: studentsTable.classId,
       className: classesTable.name,
       gender: studentsTable.gender,
@@ -82,11 +81,21 @@ router.get("/students", requireAuth, async (req, res) => {
 // POST /students — admin only
 router.post("/students", requireAuth, requireAdmin, async (req, res) => {
   const user = (req as any).user as AuthUser;
-  const { fullName, classId, gender, dateOfBirth, phone, parentName, parentPhone, address, status } = req.body;
+  const { fullName, nationalId, classId, gender, dateOfBirth, phone, parentName, parentPhone, address, status } = req.body;
+
+  if (nationalId) {
+    const [exists] = await db.select({ id: studentsTable.id }).from(studentsTable).where(eq(studentsTable.nationalId, String(nationalId).trim())).limit(1);
+    if (exists) {
+      res.status(409).json({ error: "الرقم الوطني مستخدم بالفعل لطالب آخر" });
+      return;
+    }
+  }
+
   const studentCode = await getNextCode();
   const [row] = await db.insert(studentsTable).values({
     studentCode,
     fullName,
+    nationalId: nationalId ? String(nationalId).trim() : null,
     classId: classId ? Number(classId) : null,
     gender,
     dateOfBirth,
@@ -100,7 +109,7 @@ router.post("/students", requireAuth, requireAdmin, async (req, res) => {
   const [cls] = row.classId != null
     ? await db.select({ name: classesTable.name }).from(classesTable).where(eq(classesTable.id, row.classId))
     : [];
-  await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "create", entity: "student", entityId: row.id, afterData: row });
+  await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "create", entity: "student", entityId: row.id, afterData: { ...row, className: cls?.name } });
   res.status(201).json({ ...row, className: cls?.name ?? "" });
 });
 
@@ -109,13 +118,11 @@ router.get("/students/:id", requireAuth, async (req, res) => {
   const user = (req as any).user as AuthUser;
   const targetId = Number(req.params.id);
 
-  // Students can only view their own profile
   if (user.role === "student" && user.linkedId !== targetId) {
     res.status(403).json({ error: "يمكنك الاطلاع على ملفك الشخصي فقط" });
     return;
   }
 
-  // Teachers can only view students in their assigned classes
   if (user.role === "teacher") {
     if (!user.linkedId) { res.status(403).json({ error: "غير مصرح" }); return; }
     const [student] = await db.select({ classId: studentsTable.classId }).from(studentsTable).where(eq(studentsTable.id, targetId));
@@ -133,6 +140,7 @@ router.get("/students/:id", requireAuth, async (req, res) => {
       id: studentsTable.id,
       fullName: studentsTable.fullName,
       studentCode: studentsTable.studentCode,
+      nationalId: studentsTable.nationalId,
       classId: studentsTable.classId,
       className: classesTable.name,
       gender: studentsTable.gender,
@@ -156,9 +164,20 @@ router.patch("/students/:id", requireAuth, requireAdmin, async (req, res) => {
   const user = (req as any).user as AuthUser;
   const [before] = await db.select().from(studentsTable).where(eq(studentsTable.id, Number(req.params.id)));
   if (!before) { res.status(404).json({ error: "الطالب غير موجود" }); return; }
-  const { fullName, classId, gender, dateOfBirth, phone, parentName, parentPhone, address, status } = req.body;
+
+  const { fullName, nationalId, classId, gender, dateOfBirth, phone, parentName, parentPhone, address, status } = req.body;
+
+  if (nationalId && nationalId !== before.nationalId) {
+    const [exists] = await db.select({ id: studentsTable.id }).from(studentsTable).where(eq(studentsTable.nationalId, String(nationalId).trim())).limit(1);
+    if (exists) {
+      res.status(409).json({ error: "الرقم الوطني مستخدم بالفعل لطالب آخر" });
+      return;
+    }
+  }
+
   const updates: Record<string, unknown> = {};
   if (fullName !== undefined) updates.fullName = fullName;
+  if (nationalId !== undefined) updates.nationalId = nationalId ? String(nationalId).trim() : null;
   if (classId !== undefined) updates.classId = Number(classId);
   if (gender !== undefined) updates.gender = gender;
   if (dateOfBirth !== undefined) updates.dateOfBirth = dateOfBirth;
@@ -167,6 +186,7 @@ router.patch("/students/:id", requireAuth, requireAdmin, async (req, res) => {
   if (parentPhone !== undefined) updates.parentPhone = parentPhone;
   if (address !== undefined) updates.address = address;
   if (status !== undefined) updates.status = status;
+
   const [row] = await db.update(studentsTable).set(updates).where(eq(studentsTable.id, Number(req.params.id))).returning();
   if (!row) { res.status(404).json({ error: "الطالب غير موجود" }); return; }
   const [cls] = row.classId != null

@@ -8,6 +8,7 @@
 
 export interface StudentInput {
   fullName: string;
+  nationalId?: string;
   classId: number;
   gender: string;
   dateOfBirth: string;

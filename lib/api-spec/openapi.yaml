@@ -28,6 +28,8 @@ tags:
     description: Dashboard analytics
   - name: users
     description: System user management (admin only)
+  - name: announcements
+    description: School announcements and notices
 
 paths:
   /healthz:
@@ -662,6 +664,76 @@ paths:
                 items:
                   $ref: "#/components/schemas/Activity"
 
+  /announcements:
+    get:
+      operationId: listAnnouncements
+      tags: [announcements]
+      summary: List active announcements (all authenticated users)
+      responses:
+        "200":
+          description: List of announcements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Announcement"
+    post:
+      operationId: createAnnouncement
+      tags: [announcements]
+      summary: Create an announcement (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnnouncementInput"
+      responses:
+        "201":
+          description: Announcement created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Announcement"
+
+  /announcements/{id}:
+    patch:
+      operationId: updateAnnouncement
+      tags: [announcements]
+      summary: Update an announcement (admin only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnnouncementUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Announcement"
+    delete:
+      operationId: deleteAnnouncement
+      tags: [announcements]
+      summary: Delete an announcement (admin only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
   /users:
     get:
       operationId: listUsers
@@ -752,10 +824,11 @@ components:
 
     LoginInput:
       type: object
-      required: [username, password]
+      required: [identifier, password]
       properties:
-        username: { type: string }
+        identifier: { type: string }
         password: { type: string }
+        role: { type: string }
 
     AuthResponse:
       type: object
@@ -764,6 +837,40 @@ components:
         token: { type: string }
         admin:
           $ref: "#/components/schemas/Admin"
+
+    Announcement:
+      type: object
+      required: [id, title, body, type, authorId, authorName, isPinned, createdAt]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        body: { type: string }
+        type: { type: string }
+        authorId: { type: integer }
+        authorName: { type: string }
+        isPinned: { type: boolean }
+        expiresAt: { type: ["string", "null"] }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    AnnouncementInput:
+      type: object
+      required: [title, body]
+      properties:
+        title: { type: string }
+        body: { type: string }
+        type: { type: string }
+        isPinned: { type: boolean }
+        expiresAt: { type: string }
+
+    AnnouncementUpdate:
+      type: object
+      properties:
+        title: { type: string }
+        body: { type: string }
+        type: { type: string }
+        isPinned: { type: boolean }
+        expiresAt: { type: ["string", "null"] }
 
     SystemUser:
       type: object
@@ -813,6 +920,7 @@ components:
         id: { type: integer }
         fullName: { type: string }
         studentCode: { type: string }
+        nationalId: { type: ["string", "null"] }
         classId: { type: integer }
         className: { type: string }
         gender: { type: string }
@@ -829,6 +937,7 @@ components:
       required: [fullName, classId, gender, dateOfBirth]
       properties:
         fullName: { type: string }
+        nationalId: { type: string }
         classId: { type: integer }
         gender: { type: string }
         dateOfBirth: { type: string }
@@ -842,6 +951,7 @@ components:
       type: object
       properties:
         fullName: { type: string }
+        nationalId: { type: string }
         classId: { type: integer }
         gender: { type: string }
         dateOfBirth: { type: string }

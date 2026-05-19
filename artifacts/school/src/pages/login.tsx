@@ -3,12 +3,51 @@ import { Link } from "wouter";
 import { useLogin } from "@workspace/api-client-react";
 import { setToken } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+
+type LoginRole = "admin" | "teacher" | "student";
+
+const ROLE_CONFIG: Record<LoginRole, {
+  label: string;
+  icon: string;
+  identifierLabel: string;
+  placeholder: string;
+  demoId: string;
+  demoNote: string;
+}> = {
+  admin: {
+    label: "مدير",
+    icon: "👑",
+    identifierLabel: "البريد الإلكتروني أو اسم المستخدم",
+    placeholder: "admin أو admin@school.iq",
+    demoId: "admin",
+    demoNote: "اسم المستخدم: admin | كلمة المرور: admin123",
+  },
+  teacher: {
+    label: "معلم",
+    icon: "👨‍🏫",
+    identifierLabel: "رقم الموظف (Employee ID)",
+    placeholder: "مثال: TCH001",
+    demoId: "",
+    demoNote: "أدخل رقم الموظف الخاص بك",
+  },
+  student: {
+    label: "طالب",
+    icon: "👨‍🎓",
+    identifierLabel: "الرقم الوطني (National ID)",
+    placeholder: "مثال: 1234567890",
+    demoId: "",
+    demoNote: "أدخل رقمك الوطني كما هو مسجّل لدى المدير",
+  },
+};
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("admin");
+  const [role, setRole] = useState<LoginRole>("admin");
+  const [identifier, setIdentifier] = useState("admin");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const { toast } = useToast();
+  const config = ROLE_CONFIG[role];
 
   const loginMutation = useLogin({
     mutation: {
@@ -16,22 +55,34 @@ export default function LoginPage() {
         setToken(data.token);
         window.location.href = "/dashboard";
       },
-      onError: () => {
-        toast({ title: "خطأ في تسجيل الدخول", description: "اسم المستخدم أو كلمة المرور غير صحيحة", variant: "destructive" });
+      onError: (e: any) => {
+        const msg = e?.response?.data?.error ?? e?.message ?? "بيانات الدخول غير صحيحة";
+        if (e?.response?.status === 429) {
+          toast({ title: "تم تجاوز الحد الأقصى", description: msg, variant: "destructive" });
+        } else {
+          toast({ title: "خطأ في تسجيل الدخول", description: msg, variant: "destructive" });
+        }
       },
     },
   });
 
+  function handleRoleChange(newRole: LoginRole) {
+    setRole(newRole);
+    setIdentifier(ROLE_CONFIG[newRole].demoId);
+    setPassword("");
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    loginMutation.mutate({ data: { username, password } });
+    loginMutation.mutate({ data: { identifier, password, role } });
   }
+
+  const inputCls = "w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-sm";
 
   return (
     <div className="min-h-screen flex" dir="rtl">
-      {/* Left panel: decorative */}
+      {/* Left decorative panel */}
       <div className="hidden lg:flex flex-1 bg-sidebar flex-col items-center justify-center p-12 relative overflow-hidden">
-        {/* Background pattern */}
         <div className="absolute inset-0 opacity-5">
           <svg className="w-full h-full" viewBox="0 0 400 400">
             {Array.from({ length: 10 }).map((_, r) =>
@@ -42,7 +93,6 @@ export default function LoginPage() {
           </svg>
         </div>
         <div className="relative z-10 text-center max-w-sm">
-          {/* School illustration */}
           <div className="w-28 h-28 rounded-3xl bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-8 shadow-2xl">
             <svg viewBox="0 0 64 64" className="w-16 h-16" fill="none">
               <rect x="8" y="30" width="48" height="28" rx="2" fill="hsl(213 94% 68%)" opacity="0.9"/>
@@ -57,14 +107,12 @@ export default function LoginPage() {
           <p className="text-sidebar-foreground/60 text-base leading-relaxed">
             المنظومة التعليمية العراقية المتكاملة لإدارة الطلاب والمعلمين والدرجات والحضور
           </p>
-
-          {/* Features list */}
           <div className="mt-10 space-y-3 text-right">
             {[
               ["📊", "لوحة تحكم شاملة مع إحصاءات لحظية"],
               ["🎓", "إدارة الطلاب والسجلات الأكاديمية"],
               ["📝", "تاريخ كامل للدرجات والحضور"],
-              ["📱", "تطبيق PWA يعمل بدون إنترنت"],
+              ["🔒", "نظام صلاحيات متعدد الأدوار"],
             ].map(([icon, text]) => (
               <div key={text} className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-2.5">
                 <span className="text-lg flex-shrink-0">{icon}</span>
@@ -75,32 +123,52 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right panel: form */}
+      {/* Right form panel */}
       <div className="flex-1 lg:max-w-md flex items-center justify-center p-6 bg-background">
         <div className="w-full max-w-sm">
-          {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-white text-2xl font-bold shadow-lg mb-3">م</div>
             <h1 className="text-2xl font-black text-foreground">نظام إدارة المدرسة</h1>
           </div>
 
-          {/* Card */}
           <div className="bg-white rounded-2xl shadow-xl border border-border p-8">
             <div className="mb-6">
               <h2 className="text-xl font-black text-foreground">مرحباً بعودتك</h2>
               <p className="text-muted-foreground text-sm mt-1">سجّل دخولك للمتابعة</p>
             </div>
 
+            {/* Role selector */}
+            <div className="grid grid-cols-3 gap-1.5 p-1 bg-muted/50 rounded-xl mb-5">
+              {(["admin", "teacher", "student"] as LoginRole[]).map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => handleRoleChange(r)}
+                  className={cn(
+                    "flex flex-col items-center gap-1 py-2 px-1 rounded-lg text-xs font-semibold transition-all duration-150",
+                    role === r
+                      ? "bg-white shadow-sm text-primary border border-primary/15"
+                      : "text-muted-foreground hover:text-foreground hover:bg-white/60"
+                  )}
+                >
+                  <span className="text-base">{ROLE_CONFIG[r].icon}</span>
+                  <span>{ROLE_CONFIG[r].label}</span>
+                </button>
+              ))}
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-1.5">اسم المستخدم</label>
+                <label className="block text-sm font-semibold text-foreground mb-1.5">{config.identifierLabel}</label>
                 <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-sm"
-                  placeholder="أدخل اسم المستخدم"
+                  type={role === "admin" ? "text" : "text"}
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  className={inputCls}
+                  placeholder={config.placeholder}
+                  dir={role === "student" ? "ltr" : "rtl"}
                   required
+                  autoComplete="username"
                 />
               </div>
 
@@ -111,9 +179,10 @@ export default function LoginPage() {
                     type={showPass ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-sm pl-10"
+                    className={`${inputCls} pl-10`}
                     placeholder="أدخل كلمة المرور"
                     required
+                    autoComplete="current-password"
                   />
                   <button
                     type="button"
@@ -153,17 +222,14 @@ export default function LoginPage() {
 
             {/* Demo credentials */}
             <div className="mt-5 p-3.5 bg-primary/5 border border-primary/10 rounded-xl">
-              <p className="text-xs font-semibold text-primary mb-1.5">بيانات تجريبية</p>
-              <div className="flex gap-4 text-xs text-muted-foreground">
-                <span>اسم المستخدم: <strong className="text-foreground">admin</strong></span>
-                <span>كلمة المرور: <strong className="text-foreground">admin123</strong></span>
-              </div>
+              <p className="text-xs font-semibold text-primary mb-1">بيانات تجريبية — {config.label}</p>
+              <p className="text-xs text-muted-foreground">{config.demoNote}</p>
             </div>
 
-            <div className="mt-5 text-center text-sm text-muted-foreground">
+            <div className="mt-4 text-center text-sm text-muted-foreground">
               ليس لديك حساب؟{" "}
               <Link href="/register" className="text-primary font-semibold hover:underline">
-                إنشاء حساب جديد
+                إنشاء حساب المدير
               </Link>
             </div>
           </div>
