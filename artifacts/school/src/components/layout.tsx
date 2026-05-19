@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useLogout } from "@workspace/api-client-react";
 import { clearToken } from "@/lib/auth";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -20,6 +20,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const queryClient = useQueryClient();
   const logoutMutation = useLogout();
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location]);
 
   function handleLogout() {
     logoutMutation.mutate();
