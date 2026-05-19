@@ -405,7 +405,8 @@ export const DeleteSubjectParams = zod.object({
 export const ListAttendanceQueryParams = zod.object({
   "classId": zod.coerce.number().nullish(),
   "studentId": zod.coerce.number().nullish(),
-  "date": zod.coerce.string().nullish()
+  "date": zod.coerce.string().nullish(),
+  "academicYear": zod.coerce.string().nullish()
 })
 
 export const ListAttendanceResponseItem = zod.object({
@@ -416,6 +417,7 @@ export const ListAttendanceResponseItem = zod.object({
   "className": zod.string(),
   "date": zod.string(),
   "status": zod.string(),
+  "academicYear": zod.string(),
   "notes": zod.string().nullish()
 })
 export const ListAttendanceResponse = zod.array(ListAttendanceResponseItem)
@@ -429,6 +431,7 @@ export const RecordAttendanceBody = zod.object({
   "classId": zod.number(),
   "date": zod.string(),
   "status": zod.string(),
+  "academicYear": zod.string().optional(),
   "notes": zod.string().optional()
 })
 
@@ -453,6 +456,7 @@ export const UpdateAttendanceResponse = zod.object({
   "className": zod.string(),
   "date": zod.string(),
   "status": zod.string(),
+  "academicYear": zod.string(),
   "notes": zod.string().nullish()
 })
 
@@ -463,7 +467,9 @@ export const UpdateAttendanceResponse = zod.object({
 export const ListGradesQueryParams = zod.object({
   "studentId": zod.coerce.number().nullish(),
   "classId": zod.coerce.number().nullish(),
-  "subjectId": zod.coerce.number().nullish()
+  "subjectId": zod.coerce.number().nullish(),
+  "academicYear": zod.coerce.string().nullish(),
+  "examType": zod.coerce.string().nullish()
 })
 
 export const ListGradesResponseItem = zod.object({
@@ -478,6 +484,7 @@ export const ListGradesResponseItem = zod.object({
   "maxScore": zod.number(),
   "examType": zod.string(),
   "examDate": zod.string(),
+  "academicYear": zod.string(),
   "notes": zod.string().nullish()
 })
 export const ListGradesResponse = zod.array(ListGradesResponseItem)
@@ -494,6 +501,7 @@ export const CreateGradeBody = zod.object({
   "maxScore": zod.number(),
   "examType": zod.string(),
   "examDate": zod.string(),
+  "academicYear": zod.string().optional(),
   "notes": zod.string().optional()
 })
 
@@ -525,6 +533,7 @@ export const UpdateGradeResponse = zod.object({
   "maxScore": zod.number(),
   "examType": zod.string(),
   "examDate": zod.string(),
+  "academicYear": zod.string(),
   "notes": zod.string().nullish()
 })
 

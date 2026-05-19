@@ -7,13 +7,15 @@ import { logAudit } from "../lib/audit";
 
 const router = Router();
 
-// GET /grades — all authenticated roles
+// GET /grades — all authenticated roles, filterable by studentId/classId/subjectId/academicYear/examType
 router.get("/grades", requireAuth, async (req, res) => {
-  const { studentId, classId, subjectId } = req.query;
+  const { studentId, classId, subjectId, academicYear, examType } = req.query;
   const conditions: any[] = [];
   if (studentId) conditions.push(eq(gradesTable.studentId, Number(studentId)));
   if (classId) conditions.push(eq(gradesTable.classId, Number(classId)));
   if (subjectId) conditions.push(eq(gradesTable.subjectId, Number(subjectId)));
+  if (academicYear) conditions.push(eq(gradesTable.academicYear, String(academicYear)));
+  if (examType) conditions.push(eq(gradesTable.examType, String(examType)));
 
   const rows = await db
     .select({
@@ -28,6 +30,7 @@ router.get("/grades", requireAuth, async (req, res) => {
       maxScore: gradesTable.maxScore,
       examType: gradesTable.examType,
       examDate: gradesTable.examDate,
+      academicYear: gradesTable.academicYear,
       notes: gradesTable.notes,
     })
     .from(gradesTable)
@@ -43,13 +46,14 @@ router.get("/grades", requireAuth, async (req, res) => {
     className: r.className ?? "",
     score: Number(r.score),
     maxScore: Number(r.maxScore),
+    academicYear: r.academicYear ?? "2024-2025",
   })));
 });
 
-// POST /grades — teacher + admin
+// POST /grades — teacher + admin; always creates new historical record
 router.post("/grades", requireAuth, requireTeacherOrAdmin, async (req, res) => {
   const user = (req as any).user as AuthUser;
-  const { studentId, subjectId, classId, score, maxScore, examType, examDate, notes } = req.body;
+  const { studentId, subjectId, classId, score, maxScore, examType, examDate, academicYear, notes } = req.body;
   const [row] = await db.insert(gradesTable).values({
     studentId: Number(studentId),
     subjectId: Number(subjectId),
@@ -58,6 +62,7 @@ router.post("/grades", requireAuth, requireTeacherOrAdmin, async (req, res) => {
     maxScore: String(maxScore ?? 100),
     examType,
     examDate,
+    academicYear: academicYear ?? "2024-2025",
     notes: notes ?? null,
   }).returning();
   const [student] = await db.select({ fullName: studentsTable.fullName }).from(studentsTable).where(eq(studentsTable.id, row.studentId));
@@ -67,8 +72,8 @@ router.post("/grades", requireAuth, requireTeacherOrAdmin, async (req, res) => {
   res.status(201).json({ ...row, studentName: student?.fullName ?? "", subjectName: subject?.name ?? "", className: cls?.name ?? "", score: Number(row.score), maxScore: Number(row.maxScore) });
 });
 
-// PATCH /grades/:id — teacher + admin
-router.patch("/grades/:id", requireAuth, requireTeacherOrAdmin, async (req, res) => {
+// PATCH /grades/:id — admin only (corrections only; logged to audit)
+router.patch("/grades/:id", requireAuth, requireAdmin, async (req, res) => {
   const user = (req as any).user as AuthUser;
   const [before] = await db.select().from(gradesTable).where(eq(gradesTable.id, Number(req.params.id)));
   if (!before) { res.status(404).json({ error: "الدرجة غير موجودة" }); return; }

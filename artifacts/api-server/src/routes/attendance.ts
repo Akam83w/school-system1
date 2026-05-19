@@ -7,13 +7,14 @@ import { logAudit } from "../lib/audit";
 
 const router = Router();
 
-// GET /attendance — all authenticated roles
+// GET /attendance — all authenticated roles, filterable
 router.get("/attendance", requireAuth, async (req, res) => {
-  const { classId, studentId, date } = req.query;
+  const { classId, studentId, date, academicYear } = req.query;
   const conditions: any[] = [];
   if (classId) conditions.push(eq(attendanceTable.classId, Number(classId)));
   if (studentId) conditions.push(eq(attendanceTable.studentId, Number(studentId)));
   if (date) conditions.push(eq(attendanceTable.date, String(date)));
+  if (academicYear) conditions.push(eq(attendanceTable.academicYear, String(academicYear)));
 
   const rows = await db
     .select({
@@ -24,6 +25,7 @@ router.get("/attendance", requireAuth, async (req, res) => {
       className: classesTable.name,
       date: attendanceTable.date,
       status: attendanceTable.status,
+      academicYear: attendanceTable.academicYear,
       notes: attendanceTable.notes,
     })
     .from(attendanceTable)
@@ -31,28 +33,53 @@ router.get("/attendance", requireAuth, async (req, res) => {
     .leftJoin(classesTable, eq(attendanceTable.classId, classesTable.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined);
 
-  res.json(rows.map(r => ({ ...r, studentName: r.studentName ?? "", className: r.className ?? "" })));
+  res.json(rows.map(r => ({
+    ...r,
+    studentName: r.studentName ?? "",
+    className: r.className ?? "",
+    academicYear: r.academicYear ?? "2024-2025",
+  })));
 });
 
-// POST /attendance — teacher + admin
+// POST /attendance — teacher + admin; appends new record for given date (historical, not overwritten)
 router.post("/attendance", requireAuth, requireTeacherOrAdmin, async (req, res) => {
   const user = (req as any).user as AuthUser;
-  const { studentId, classId, date, status, notes } = req.body;
+  const { studentId, classId, date, status, academicYear, notes } = req.body;
+
+  // Prevent duplicate record for same student + date + academic year
+  const [existing] = await db
+    .select({ id: attendanceTable.id })
+    .from(attendanceTable)
+    .where(
+      and(
+        eq(attendanceTable.studentId, Number(studentId)),
+        eq(attendanceTable.date, String(date)),
+        eq(attendanceTable.academicYear, String(academicYear ?? "2024-2025"))
+      )
+    )
+    .limit(1);
+
+  if (existing) {
+    res.status(409).json({ error: "تم تسجيل حضور هذا الطالب في هذا اليوم بالفعل لهذا العام الدراسي" });
+    return;
+  }
+
   const [row] = await db.insert(attendanceTable).values({
     studentId: Number(studentId),
     classId: Number(classId),
     date,
     status,
+    academicYear: academicYear ?? "2024-2025",
     notes: notes ?? null,
   }).returning();
   const [student] = await db.select({ fullName: studentsTable.fullName }).from(studentsTable).where(eq(studentsTable.id, row.studentId));
   const [cls] = await db.select({ name: classesTable.name }).from(classesTable).where(eq(classesTable.id, row.classId));
   await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "create", entity: "attendance", entityId: row.id, afterData: { ...row, studentName: student?.fullName } });
-  res.status(201).json({ ...row, studentName: student?.fullName ?? "", className: cls?.name ?? "" });
+  res.status(201).json({ ...row, studentName: student?.fullName ?? "", className: cls?.name ?? "", academicYear: row.academicYear });
 });
 
-// PATCH /attendance/:id — teacher + admin
-router.patch("/attendance/:id", requireAuth, requireTeacherOrAdmin, async (req, res) => {
+// PATCH /attendance/:id — admin only (corrections, always audited)
+router.patch("/attendance/:id", requireAuth, requireAdmin, async (req, res) => {
   const user = (req as any).user as AuthUser;
   const [before] = await db.select().from(attendanceTable).where(eq(attendanceTable.id, Number(req.params.id)));
   if (!before) { res.status(404).json({ error: "السجل غير موجود" }); return; }
@@ -65,7 +92,7 @@ router.patch("/attendance/:id", requireAuth, requireTeacherOrAdmin, async (req, 
   const [student] = await db.select({ fullName: studentsTable.fullName }).from(studentsTable).where(eq(studentsTable.id, row.studentId));
   const [cls] = await db.select({ name: classesTable.name }).from(classesTable).where(eq(classesTable.id, row.classId));
   await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "update", entity: "attendance", entityId: row.id, beforeData: before, afterData: row });
-  res.json({ ...row, studentName: student?.fullName ?? "", className: cls?.name ?? "" });
+  res.json({ ...row, studentName: student?.fullName ?? "", className: cls?.name ?? "", academicYear: row.academicYear });
 });
 
 // DELETE /attendance/:id — admin only

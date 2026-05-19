@@ -11,5 +11,6 @@ export interface AttendanceInput {
   classId: number;
   date: string;
   status: string;
+  academicYear?: string;
   notes?: string;
 }

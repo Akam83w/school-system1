@@ -19,4 +19,12 @@ classId?: number | null;
  * @nullable
  */
 subjectId?: number | null;
+/**
+ * @nullable
+ */
+academicYear?: string | null;
+/**
+ * @nullable
+ */
+examType?: string | null;
 };

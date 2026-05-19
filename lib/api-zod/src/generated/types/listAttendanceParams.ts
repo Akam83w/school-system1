@@ -19,4 +19,8 @@ studentId?: number | null;
  * @nullable
  */
 date?: string | null;
+/**
+ * @nullable
+ */
+academicYear?: string | null;
 };

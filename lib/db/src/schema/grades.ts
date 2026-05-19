@@ -14,6 +14,7 @@ export const gradesTable = pgTable("grades", {
   maxScore: numeric("max_score", { precision: 5, scale: 2 }).notNull().default("100"),
   examType: text("exam_type").notNull(),
   examDate: text("exam_date").notNull(),
+  academicYear: text("academic_year").notNull().default("2024-2025"),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

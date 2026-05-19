@@ -14,6 +14,7 @@ export interface Attendance {
   className: string;
   date: string;
   status: string;
+  academicYear: string;
   /** @nullable */
   notes?: string | null;
 }

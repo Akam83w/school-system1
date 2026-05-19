@@ -18,6 +18,7 @@ export interface Grade {
   maxScore: number;
   examType: string;
   examDate: string;
+  academicYear: string;
   /** @nullable */
   notes?: string | null;
 }

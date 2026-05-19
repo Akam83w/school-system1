@@ -14,5 +14,6 @@ export interface GradeInput {
   maxScore: number;
   examType: string;
   examDate: string;
+  academicYear?: string;
   notes?: string;
 }

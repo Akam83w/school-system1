@@ -455,6 +455,10 @@ paths:
           in: query
           schema:
             type: ["string", "null"]
+        - name: academicYear
+          in: query
+          schema:
+            type: ["string", "null"]
       responses:
         "200":
           description: Attendance records
@@ -525,6 +529,14 @@ paths:
           in: query
           schema:
             type: ["integer", "null"]
+        - name: academicYear
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: examType
+          in: query
+          schema:
+            type: ["string", "null"]
       responses:
         "200":
           description: List of grades
@@ -833,7 +845,7 @@ components:
 
     Attendance:
       type: object
-      required: [id, studentId, studentName, classId, className, date, status]
+      required: [id, studentId, studentName, classId, className, date, status, academicYear]
       properties:
         id: { type: integer }
         studentId: { type: integer }
@@ -842,6 +854,7 @@ components:
         className: { type: string }
         date: { type: string }
         status: { type: string }
+        academicYear: { type: string }
         notes: { type: ["string", "null"] }
 
     AttendanceInput:
@@ -852,6 +865,7 @@ components:
         classId: { type: integer }
         date: { type: string }
         status: { type: string }
+        academicYear: { type: string }
         notes: { type: string }
 
     AttendanceUpdate:
@@ -862,7 +876,7 @@ components:
 
     Grade:
       type: object
-      required: [id, studentId, studentName, subjectId, subjectName, classId, className, score, maxScore, examType, examDate]
+      required: [id, studentId, studentName, subjectId, subjectName, classId, className, score, maxScore, examType, examDate, academicYear]
       properties:
         id: { type: integer }
         studentId: { type: integer }
@@ -875,6 +889,7 @@ components:
         maxScore: { type: number }
         examType: { type: string }
         examDate: { type: string }
+        academicYear: { type: string }
         notes: { type: ["string", "null"] }
 
     GradeInput:
@@ -888,6 +903,7 @@ components:
         maxScore: { type: number }
         examType: { type: string }
         examDate: { type: string }
+        academicYear: { type: string }
         notes: { type: string }
 
     GradeUpdate:

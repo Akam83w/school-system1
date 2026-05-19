@@ -10,6 +10,7 @@ export const attendanceTable = pgTable("attendance", {
   classId: integer("class_id").notNull().references(() => classesTable.id),
   date: text("date").notNull(),
   status: text("status").notNull(),
+  academicYear: text("academic_year").notNull().default("2024-2025"),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

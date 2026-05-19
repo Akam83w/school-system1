@@ -171,6 +171,7 @@ export interface Attendance {
   className: string;
   date: string;
   status: string;
+  academicYear: string;
   /** @nullable */
   notes?: string | null;
 }
@@ -180,6 +181,7 @@ export interface AttendanceInput {
   classId: number;
   date: string;
   status: string;
+  academicYear?: string;
   notes?: string;
 }
 
@@ -200,6 +202,7 @@ export interface Grade {
   maxScore: number;
   examType: string;
   examDate: string;
+  academicYear: string;
   /** @nullable */
   notes?: string | null;
 }
@@ -212,6 +215,7 @@ export interface GradeInput {
   maxScore: number;
   examType: string;
   examDate: string;
+  academicYear?: string;
   notes?: string;
 }
 
@@ -292,6 +296,10 @@ studentId?: number | null;
  * @nullable
  */
 date?: string | null;
+/**
+ * @nullable
+ */
+academicYear?: string | null;
 };
 
 export type ListGradesParams = {
@@ -307,5 +315,13 @@ classId?: number | null;
  * @nullable
  */
 subjectId?: number | null;
+/**
+ * @nullable
+ */
+academicYear?: string | null;
+/**
+ * @nullable
+ */
+examType?: string | null;
 };
 
