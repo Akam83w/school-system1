@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Layout } from "@/components/layout";
 import {
   useListStudents,
@@ -11,7 +12,6 @@ import {
 import type { Student } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "wouter";
 
 type StudentForm = {
   fullName: string;
@@ -45,6 +45,7 @@ export default function StudentsPage() {
   const [form, setForm] = useState<StudentForm>(emptyForm);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
 
   const { data: students, isLoading } = useListStudents(
     { search: search || undefined, classId: classFilter ? Number(classFilter) : undefined },
@@ -192,14 +193,23 @@ export default function StudentsPage() {
                   </tr>
                 ) : (
                   (students ?? []).map((s) => (
-                    <tr key={s.id} className="border-b border-border hover:bg-muted/30 transition-colors">
+                    <tr
+                      key={s.id}
+                      onClick={() => navigate(`/students/${s.id}`)}
+                      className="border-b border-border last:border-0 hover:bg-primary/5 transition-colors cursor-pointer group"
+                    >
                       <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{s.studentCode}</td>
-                      <td className="px-4 py-3 font-medium">
-                        <Link href={`/students/${s.id}`} className="hover:text-primary hover:underline">{s.fullName}</Link>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
+                            {s.fullName.split(" ").slice(0, 2).map((w) => w[0]).join("")}
+                          </div>
+                          <span className="font-medium group-hover:text-primary transition-colors">{s.fullName}</span>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{s.className}</td>
-                      <td className="px-4 py-3">{s.gender}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{s.parentName ?? "-"}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{s.gender}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{s.parentName ?? "—"}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${s.status === "active" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
                           {s.status === "active" ? "فعال" : "غير فعال"}
@@ -207,9 +217,14 @@ export default function StudentsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <button onClick={() => openEdit(s)} className="text-xs px-2.5 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-medium">تعديل</button>
                           <button
-                            onClick={() => { if (confirm("هل تريد حذف هذا الطالب؟")) deleteMutation.mutate({ id: s.id }); }}
+                            onClick={(e) => { e.stopPropagation(); openEdit(s); }}
+                            className="text-xs px-2.5 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-medium"
+                          >
+                            تعديل
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); if (confirm("هل تريد حذف هذا الطالب؟")) deleteMutation.mutate({ id: s.id }); }}
                             className="text-xs px-2.5 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100 transition-colors font-medium"
                           >
                             حذف
@@ -222,7 +237,12 @@ export default function StudentsPage() {
               </tbody>
             </table>
           </div>
-          {students && <div className="px-4 py-2 border-t border-border text-xs text-muted-foreground">إجمالي: {students.length} طالب</div>}
+          {students && (
+            <div className="px-4 py-2.5 border-t border-border bg-muted/20 flex items-center justify-between text-xs text-muted-foreground">
+              <span>إجمالي: {students.length} طالب</span>
+              <span>انقر على أي صف لعرض تفاصيل الطالب</span>
+            </div>
+          )}
         </div>
       </div>
 

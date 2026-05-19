@@ -7,7 +7,7 @@ import {
   getListStudentsQueryKey,
   getListAttendanceQueryKey,
 } from "@workspace/api-client-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useState } from "react";
 
 function getGradeColor(pct: number) {
@@ -18,6 +18,7 @@ function getGradeColor(pct: number) {
 
 export default function ClassDetailPage({ id }: { id: number }) {
   const [activeTab, setActiveTab] = useState<"students" | "attendance">("students");
+  const [, navigate] = useLocation();
 
   const { data: cls, isLoading: classLoading } = useGetClass(id, {
     query: { queryKey: getGetClassQueryKey(id), enabled: !!id },
@@ -207,13 +208,20 @@ export default function ClassDetailPage({ id }: { id: number }) {
                     </tr>
                   ) : (
                     (students ?? []).map((s, idx) => (
-                      <tr key={s.id} className="border-b border-border hover:bg-muted/30 transition-colors">
+                      <tr
+                        key={s.id}
+                        onClick={() => navigate(`/students/${s.id}`)}
+                        className="border-b border-border last:border-0 hover:bg-primary/5 transition-colors cursor-pointer group"
+                      >
                         <td className="px-4 py-3 text-muted-foreground text-xs">{idx + 1}</td>
                         <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{s.studentCode}</td>
-                        <td className="px-4 py-3 font-medium">
-                          <Link href={`/students/${s.id}`} className="hover:text-primary hover:underline transition-colors">
-                            {s.fullName}
-                          </Link>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
+                              {s.fullName.split(" ").slice(0, 2).map((w: string) => w[0]).join("")}
+                            </div>
+                            <span className="font-medium group-hover:text-primary transition-colors">{s.fullName}</span>
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">{s.gender}</td>
                         <td className="px-4 py-3 text-muted-foreground">{s.dateOfBirth}</td>
