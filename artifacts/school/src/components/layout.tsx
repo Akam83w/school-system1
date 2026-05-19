@@ -56,6 +56,14 @@ const AuditIcon = () => (
     <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
   </svg>
 );
+const UsersIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-[18px] h-[18px]">
+    <circle cx="12" cy="7" r="4" />
+    <path d="M5.5 21a8.38 8.38 0 0 1 13 0" />
+    <circle cx="19" cy="7" r="2.5" /><path d="M21.5 18a5.5 5.5 0 0 0-4-1.3" />
+    <circle cx="5" cy="7" r="2.5" /><path d="M2.5 18a5.5 5.5 0 0 1 4-1.3" />
+  </svg>
+);
 const LogoutIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-[18px] h-[18px]">
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -82,6 +90,7 @@ const navItems = [
   { href: "/attendance", label: "الحضور والغياب", Icon: AttendanceIcon, roles: ["admin", "teacher", "student"] },
   { href: "/grades", label: "سجل الدرجات", Icon: GradesIcon, roles: ["admin", "teacher", "student"] },
   { href: "/audit-logs", label: "سجل الأحداث", Icon: AuditIcon, roles: ["admin"] },
+  { href: "/users", label: "إدارة المستخدمين", Icon: UsersIcon, roles: ["admin"] },
 ];
 
 const ROLE_META: Record<string, { label: string; bg: string; text: string }> = {
@@ -99,6 +108,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/attendance": "الحضور والغياب",
   "/grades": "سجل الدرجات",
   "/audit-logs": "سجل الأحداث",
+  "/users": "إدارة المستخدمين",
 };
 
 export function Layout({ children }: { children: React.ReactNode }) {

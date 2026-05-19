@@ -1,17 +1,37 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { gradesTable, studentsTable, subjectsTable, classesTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { requireAuth, requireTeacherOrAdmin, requireAdmin, type AuthUser } from "../middlewares/auth";
 import { logAudit } from "../lib/audit";
 
 const router = Router();
 
-// GET /grades — all authenticated roles, filterable by studentId/classId/subjectId/academicYear/examType
+// GET /grades — filtered by role:
+//   admin  → all grades
+//   teacher → only grades in classes assigned to the teacher (via linkedId → teacherId)
+//   student → only own grades (via linkedId → studentId)
 router.get("/grades", requireAuth, async (req, res) => {
+  const user = (req as any).user as AuthUser;
   const { studentId, classId, subjectId, academicYear, examType } = req.query;
-  const conditions: any[] = [];
-  if (studentId) conditions.push(eq(gradesTable.studentId, Number(studentId)));
+  const conditions: ReturnType<typeof eq>[] = [];
+
+  if (user.role === "student") {
+    if (!user.linkedId) { res.json([]); return; }
+    conditions.push(eq(gradesTable.studentId, user.linkedId));
+  } else if (user.role === "teacher") {
+    if (!user.linkedId) { res.json([]); return; }
+    const teacherClasses = await db
+      .select({ id: classesTable.id })
+      .from(classesTable)
+      .where(eq(classesTable.teacherId, user.linkedId));
+    const classIds = teacherClasses.map(c => c.id);
+    if (classIds.length === 0) { res.json([]); return; }
+    conditions.push(inArray(gradesTable.classId, classIds));
+  }
+
+  // Apply optional query filters
+  if (studentId && user.role !== "student") conditions.push(eq(gradesTable.studentId, Number(studentId)));
   if (classId) conditions.push(eq(gradesTable.classId, Number(classId)));
   if (subjectId) conditions.push(eq(gradesTable.subjectId, Number(subjectId)));
   if (academicYear) conditions.push(eq(gradesTable.academicYear, String(academicYear)));
@@ -50,7 +70,7 @@ router.get("/grades", requireAuth, async (req, res) => {
   })));
 });
 
-// POST /grades — teacher + admin; always creates new historical record
+// POST /grades — teacher + admin; students cannot submit grades
 router.post("/grades", requireAuth, requireTeacherOrAdmin, async (req, res) => {
   const user = (req as any).user as AuthUser;
   const { studentId, subjectId, classId, score, maxScore, examType, examDate, academicYear, notes } = req.body;
@@ -72,13 +92,13 @@ router.post("/grades", requireAuth, requireTeacherOrAdmin, async (req, res) => {
   res.status(201).json({ ...row, studentName: student?.fullName ?? "", subjectName: subject?.name ?? "", className: cls?.name ?? "", score: Number(row.score), maxScore: Number(row.maxScore) });
 });
 
-// PATCH /grades/:id — admin only (corrections only; logged to audit)
+// PATCH /grades/:id — admin only (corrections; logged)
 router.patch("/grades/:id", requireAuth, requireAdmin, async (req, res) => {
   const user = (req as any).user as AuthUser;
   const [before] = await db.select().from(gradesTable).where(eq(gradesTable.id, Number(req.params.id)));
   if (!before) { res.status(404).json({ error: "الدرجة غير موجودة" }); return; }
   const { score, maxScore, examType, examDate, notes } = req.body;
-  const updates: any = {};
+  const updates: Record<string, unknown> = {};
   if (score !== undefined) updates.score = String(score);
   if (maxScore !== undefined) updates.maxScore = String(maxScore);
   if (examType !== undefined) updates.examType = examType;

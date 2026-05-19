@@ -1,18 +1,38 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { attendanceTable, studentsTable, classesTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { requireAuth, requireTeacherOrAdmin, requireAdmin, type AuthUser } from "../middlewares/auth";
 import { logAudit } from "../lib/audit";
 
 const router = Router();
 
-// GET /attendance — all authenticated roles, filterable
+// GET /attendance — filtered by role:
+//   admin  → all records
+//   teacher → only records for classes assigned to the teacher (via linkedId → teacherId)
+//   student → only own attendance records (via linkedId → studentId)
 router.get("/attendance", requireAuth, async (req, res) => {
+  const user = (req as any).user as AuthUser;
   const { classId, studentId, date, academicYear } = req.query;
-  const conditions: any[] = [];
+  const conditions: ReturnType<typeof eq>[] = [];
+
+  if (user.role === "student") {
+    if (!user.linkedId) { res.json([]); return; }
+    conditions.push(eq(attendanceTable.studentId, user.linkedId));
+  } else if (user.role === "teacher") {
+    if (!user.linkedId) { res.json([]); return; }
+    const teacherClasses = await db
+      .select({ id: classesTable.id })
+      .from(classesTable)
+      .where(eq(classesTable.teacherId, user.linkedId));
+    const classIds = teacherClasses.map(c => c.id);
+    if (classIds.length === 0) { res.json([]); return; }
+    conditions.push(inArray(attendanceTable.classId, classIds));
+  }
+
+  // Apply optional query filters
   if (classId) conditions.push(eq(attendanceTable.classId, Number(classId)));
-  if (studentId) conditions.push(eq(attendanceTable.studentId, Number(studentId)));
+  if (studentId && user.role !== "student") conditions.push(eq(attendanceTable.studentId, Number(studentId)));
   if (date) conditions.push(eq(attendanceTable.date, String(date)));
   if (academicYear) conditions.push(eq(attendanceTable.academicYear, String(academicYear)));
 
@@ -41,12 +61,11 @@ router.get("/attendance", requireAuth, async (req, res) => {
   })));
 });
 
-// POST /attendance — teacher + admin; appends new record for given date (historical, not overwritten)
+// POST /attendance — teacher + admin; students cannot submit attendance
 router.post("/attendance", requireAuth, requireTeacherOrAdmin, async (req, res) => {
   const user = (req as any).user as AuthUser;
   const { studentId, classId, date, status, academicYear, notes } = req.body;
 
-  // Prevent duplicate record for same student + date + academic year
   const [existing] = await db
     .select({ id: attendanceTable.id })
     .from(attendanceTable)
@@ -84,7 +103,7 @@ router.patch("/attendance/:id", requireAuth, requireAdmin, async (req, res) => {
   const [before] = await db.select().from(attendanceTable).where(eq(attendanceTable.id, Number(req.params.id)));
   if (!before) { res.status(404).json({ error: "السجل غير موجود" }); return; }
   const { status, notes } = req.body;
-  const updates: any = {};
+  const updates: Record<string, unknown> = {};
   if (status !== undefined) updates.status = status;
   if (notes !== undefined) updates.notes = notes;
   const [row] = await db.update(attendanceTable).set(updates).where(eq(attendanceTable.id, Number(req.params.id))).returning();

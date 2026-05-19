@@ -6,13 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface Admin {
-  id: number;
-  username: string;
+export interface UserInput {
   name: string;
+  username: string;
+  phone: string;
+  password: string;
   role: string;
-  /** @nullable */
-  phone?: string | null;
-  /** @nullable */
-  linkedId?: number | null;
+  linkedId?: number;
 }

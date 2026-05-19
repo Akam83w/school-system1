@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { studentsTable, classesTable } from "@workspace/db";
-import { eq, ilike, and, or } from "drizzle-orm";
+import { eq, ilike, and, or, inArray } from "drizzle-orm";
 import { requireAuth, requireAdmin, type AuthUser } from "../middlewares/auth";
 import { logAudit } from "../lib/audit";
 
@@ -14,9 +14,48 @@ async function getNextCode() {
   return `STU${max + 1}`;
 }
 
-// GET /students — admin + teacher
+// GET /students — filtered by role:
+//   admin  → all students (with optional classId / search filters)
+//   teacher → only students in classes assigned to the teacher
+//   student → only own profile
 router.get("/students", requireAuth, async (req, res) => {
+  const user = (req as any).user as AuthUser;
   const { classId, search } = req.query;
+  const conditions: ReturnType<typeof eq>[] = [];
+
+  if (user.role === "student") {
+    if (!user.linkedId) { res.json([]); return; }
+    conditions.push(eq(studentsTable.id, user.linkedId));
+  } else if (user.role === "teacher") {
+    if (!user.linkedId) { res.json([]); return; }
+    const teacherClasses = await db
+      .select({ id: classesTable.id })
+      .from(classesTable)
+      .where(eq(classesTable.teacherId, user.linkedId));
+    const classIds = teacherClasses.map(c => c.id);
+    if (classIds.length === 0) { res.json([]); return; }
+    // If teacher also filtered by classId, intersect
+    if (classId && classIds.includes(Number(classId))) {
+      conditions.push(eq(studentsTable.classId, Number(classId)));
+    } else if (classId) {
+      res.json([]); return;
+    } else {
+      conditions.push(inArray(studentsTable.classId, classIds));
+    }
+  } else {
+    // admin: apply optional filters directly
+    if (classId) conditions.push(eq(studentsTable.classId, Number(classId)));
+  }
+
+  if (search && user.role !== "student") {
+    conditions.push(
+      or(
+        ilike(studentsTable.fullName, `%${search}%`),
+        ilike(studentsTable.studentCode, `%${search}%`),
+      )!
+    );
+  }
+
   const rows = await db
     .select({
       id: studentsTable.id,
@@ -35,15 +74,8 @@ router.get("/students", requireAuth, async (req, res) => {
     })
     .from(studentsTable)
     .leftJoin(classesTable, eq(studentsTable.classId, classesTable.id))
-    .where(
-      and(
-        classId ? eq(studentsTable.classId, Number(classId)) : undefined,
-        search ? or(
-          ilike(studentsTable.fullName, `%${search}%`),
-          ilike(studentsTable.studentCode, `%${search}%`),
-        ) : undefined,
-      )
-    );
+    .where(conditions.length > 0 ? and(...conditions) : undefined);
+
   res.json(rows.map(r => ({ ...r, className: r.className ?? "" })));
 });
 
@@ -72,8 +104,30 @@ router.post("/students", requireAuth, requireAdmin, async (req, res) => {
   res.status(201).json({ ...row, className: cls?.name ?? "" });
 });
 
-// GET /students/:id — admin + teacher
+// GET /students/:id — filtered by role
 router.get("/students/:id", requireAuth, async (req, res) => {
+  const user = (req as any).user as AuthUser;
+  const targetId = Number(req.params.id);
+
+  // Students can only view their own profile
+  if (user.role === "student" && user.linkedId !== targetId) {
+    res.status(403).json({ error: "يمكنك الاطلاع على ملفك الشخصي فقط" });
+    return;
+  }
+
+  // Teachers can only view students in their assigned classes
+  if (user.role === "teacher") {
+    if (!user.linkedId) { res.status(403).json({ error: "غير مصرح" }); return; }
+    const [student] = await db.select({ classId: studentsTable.classId }).from(studentsTable).where(eq(studentsTable.id, targetId));
+    if (!student) { res.status(404).json({ error: "الطالب غير موجود" }); return; }
+    if (student.classId != null) {
+      const [cls] = await db.select({ id: classesTable.id }).from(classesTable).where(
+        and(eq(classesTable.id, student.classId), eq(classesTable.teacherId, user.linkedId))
+      );
+      if (!cls) { res.status(403).json({ error: "غير مصرح: الطالب ليس في صفوفك" }); return; }
+    }
+  }
+
   const [row] = await db
     .select({
       id: studentsTable.id,
@@ -92,7 +146,7 @@ router.get("/students/:id", requireAuth, async (req, res) => {
     })
     .from(studentsTable)
     .leftJoin(classesTable, eq(studentsTable.classId, classesTable.id))
-    .where(eq(studentsTable.id, Number(req.params.id)));
+    .where(eq(studentsTable.id, targetId));
   if (!row) { res.status(404).json({ error: "الطالب غير موجود" }); return; }
   res.json({ ...row, className: row.className ?? "" });
 });
@@ -103,7 +157,7 @@ router.patch("/students/:id", requireAuth, requireAdmin, async (req, res) => {
   const [before] = await db.select().from(studentsTable).where(eq(studentsTable.id, Number(req.params.id)));
   if (!before) { res.status(404).json({ error: "الطالب غير موجود" }); return; }
   const { fullName, classId, gender, dateOfBirth, phone, parentName, parentPhone, address, status } = req.body;
-  const updates: any = {};
+  const updates: Record<string, unknown> = {};
   if (fullName !== undefined) updates.fullName = fullName;
   if (classId !== undefined) updates.classId = Number(classId);
   if (gender !== undefined) updates.gender = gender;

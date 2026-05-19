@@ -1,14 +1,33 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { classesTable, teachersTable, studentsTable } from "@workspace/db";
-import { eq, count } from "drizzle-orm";
+import { eq, count, and } from "drizzle-orm";
 import { requireAuth, requireAdmin, type AuthUser } from "../middlewares/auth";
 import { logAudit } from "../lib/audit";
 
 const router = Router();
 
-// GET /classes — all authenticated roles
+// GET /classes — filtered by role:
+//   admin  → all classes
+//   teacher → only classes assigned to the teacher (via linkedId → teacherId)
+//   student → only own class (via linkedId → students.id → classId)
 router.get("/classes", requireAuth, async (req, res) => {
+  const user = (req as any).user as AuthUser;
+  let whereCondition: ReturnType<typeof eq> | undefined;
+
+  if (user.role === "teacher") {
+    if (!user.linkedId) { res.json([]); return; }
+    whereCondition = eq(classesTable.teacherId, user.linkedId);
+  } else if (user.role === "student") {
+    if (!user.linkedId) { res.json([]); return; }
+    const [student] = await db
+      .select({ classId: studentsTable.classId })
+      .from(studentsTable)
+      .where(eq(studentsTable.id, user.linkedId));
+    if (!student?.classId) { res.json([]); return; }
+    whereCondition = eq(classesTable.id, student.classId);
+  }
+
   const rows = await db
     .select({
       id: classesTable.id,
@@ -21,7 +40,8 @@ router.get("/classes", requireAuth, async (req, res) => {
       room: classesTable.room,
     })
     .from(classesTable)
-    .leftJoin(teachersTable, eq(classesTable.teacherId, teachersTable.id));
+    .leftJoin(teachersTable, eq(classesTable.teacherId, teachersTable.id))
+    .where(whereCondition);
 
   const result = await Promise.all(
     rows.map(async (row) => {
@@ -52,8 +72,26 @@ router.post("/classes", requireAuth, requireAdmin, async (req, res) => {
   res.status(201).json({ ...row, teacherName: teacher?.fullName ?? "", studentCount: 0 });
 });
 
-// GET /classes/:id — all authenticated roles
+// GET /classes/:id — role-aware access
 router.get("/classes/:id", requireAuth, async (req, res) => {
+  const user = (req as any).user as AuthUser;
+  const classId = Number(req.params.id);
+
+  // Teacher: only own class
+  if (user.role === "teacher") {
+    if (!user.linkedId) { res.status(403).json({ error: "غير مصرح" }); return; }
+    const [check] = await db.select({ id: classesTable.id }).from(classesTable).where(
+      and(eq(classesTable.id, classId), eq(classesTable.teacherId, user.linkedId))
+    );
+    if (!check) { res.status(403).json({ error: "غير مصرح: هذا الصف ليس صفك المعيّن" }); return; }
+  }
+  // Student: only own class
+  if (user.role === "student") {
+    if (!user.linkedId) { res.status(403).json({ error: "غير مصرح" }); return; }
+    const [student] = await db.select({ classId: studentsTable.classId }).from(studentsTable).where(eq(studentsTable.id, user.linkedId));
+    if (student?.classId !== classId) { res.status(403).json({ error: "غير مصرح: لا يمكنك الاطلاع على بيانات هذا الصف" }); return; }
+  }
+
   const [row] = await db
     .select({
       id: classesTable.id,
@@ -67,7 +105,7 @@ router.get("/classes/:id", requireAuth, async (req, res) => {
     })
     .from(classesTable)
     .leftJoin(teachersTable, eq(classesTable.teacherId, teachersTable.id))
-    .where(eq(classesTable.id, Number(req.params.id)));
+    .where(eq(classesTable.id, classId));
   if (!row) { res.status(404).json({ error: "الصف غير موجود" }); return; }
   const [cnt] = await db.select({ count: count() }).from(studentsTable).where(eq(studentsTable.classId, row.id));
   res.json({ ...row, teacherName: row.teacherName ?? "", studentCount: cnt?.count ?? 0 });
@@ -79,7 +117,7 @@ router.patch("/classes/:id", requireAuth, requireAdmin, async (req, res) => {
   const [before] = await db.select().from(classesTable).where(eq(classesTable.id, Number(req.params.id)));
   if (!before) { res.status(404).json({ error: "الصف غير موجود" }); return; }
   const { name, grade, teacherId, capacity, academicYear, room } = req.body;
-  const updates: any = {};
+  const updates: Record<string, unknown> = {};
   if (name !== undefined) updates.name = name;
   if (grade !== undefined) updates.grade = grade;
   if (teacherId !== undefined) updates.teacherId = Number(teacherId);

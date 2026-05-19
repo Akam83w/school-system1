@@ -6,7 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface Admin {
+export interface SystemUser {
   id: number;
   username: string;
   name: string;
@@ -15,4 +15,5 @@ export interface Admin {
   phone?: string | null;
   /** @nullable */
   linkedId?: number | null;
+  createdAt?: string;
 }

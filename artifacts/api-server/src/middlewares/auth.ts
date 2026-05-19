@@ -9,6 +9,7 @@ export interface AuthUser {
   name: string;
   phone: string;
   role: string;
+  linkedId: number | null;
 }
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
@@ -24,14 +25,26 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     return;
   }
   const [admin] = await db
-    .select({ id: adminsTable.id, name: adminsTable.name, phone: adminsTable.phone, role: adminsTable.role })
+    .select({
+      id: adminsTable.id,
+      name: adminsTable.name,
+      phone: adminsTable.phone,
+      role: adminsTable.role,
+      linkedId: adminsTable.linkedId,
+    })
     .from(adminsTable)
     .where(eq(adminsTable.id, decoded.adminId));
   if (!admin) {
     res.status(401).json({ error: "المستخدم غير موجود" });
     return;
   }
-  (req as any).user = { id: admin.id, name: admin.name, phone: admin.phone ?? "", role: admin.role } satisfies AuthUser;
+  (req as any).user = {
+    id: admin.id,
+    name: admin.name,
+    phone: admin.phone ?? "",
+    role: admin.role,
+    linkedId: admin.linkedId ?? null,
+  } satisfies AuthUser;
   next();
 }
 

@@ -6,13 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface Admin {
-  id: number;
-  username: string;
-  name: string;
-  role: string;
-  /** @nullable */
-  phone?: string | null;
+export interface UserUpdate {
+  name?: string;
+  role?: string;
   /** @nullable */
   linkedId?: number | null;
 }

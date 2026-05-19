@@ -6,7 +6,7 @@ import { createHmac } from "crypto";
 
 const router = Router();
 
-function hashPassword(password: string): string {
+export function hashPassword(password: string): string {
   const salt = "school_salt_2024";
   return createHmac("sha256", salt).update(password).digest("hex");
 }
@@ -28,15 +28,25 @@ export function verifyToken(token: string): { adminId: number } | null {
   }
 }
 
+// POST /auth/register — ONLY for first-user bootstrap (creates the initial admin account)
+// All subsequent accounts must be created by an admin via POST /users
 router.post("/auth/register", async (req, res) => {
-  const { name, username, phone, password, role } = req.body;
+  const [{ total }] = await db.select({ total: count() }).from(adminsTable);
+
+  if (total > 0) {
+    res.status(403).json({
+      error: "تسجيل المستخدمين الجدد محظور. يرجى التواصل مع مدير النظام لإنشاء حساب جديد.",
+    });
+    return;
+  }
+
+  const { name, username, phone, password } = req.body;
 
   if (!name || !username || !phone || !password) {
     res.status(400).json({ error: "الاسم الكامل واسم المستخدم ورقم الهاتف وكلمة المرور مطلوبة" });
     return;
   }
 
-  // Validate three-word full name
   const nameParts = String(name).trim().split(/\s+/).filter(Boolean);
   if (nameParts.length < 3) {
     res.status(400).json({ error: "يجب أن يتكون الاسم الكامل من ثلاثة أسماء على الأقل" });
@@ -50,7 +60,6 @@ router.post("/auth/register", async (req, res) => {
 
   const phoneStr = String(phone).trim();
 
-  // Check username uniqueness
   const [usernameExists] = await db
     .select({ id: adminsTable.id })
     .from(adminsTable)
@@ -61,7 +70,6 @@ router.post("/auth/register", async (req, res) => {
     return;
   }
 
-  // Check phone uniqueness
   const [phoneExists] = await db
     .select({ id: adminsTable.id })
     .from(adminsTable)
@@ -72,27 +80,13 @@ router.post("/auth/register", async (req, res) => {
     return;
   }
 
-  // Determine role
-  const [{ total }] = await db.select({ total: count() }).from(adminsTable);
-  let finalRole: string;
-
-  if (total === 0) {
-    finalRole = "admin"; // First user always becomes admin
-  } else {
-    if (role === "admin") {
-      res.status(409).json({ error: "يوجد مدير واحد فقط مسموح به في النظام" });
-      return;
-    }
-    finalRole = role === "student" ? "student" : "teacher";
-  }
-
   const passwordHash = hashPassword(password);
   const [newAdmin] = await db
     .insert(adminsTable)
-    .values({ name: String(name).trim(), username, phone: phoneStr, passwordHash, role: finalRole })
+    .values({ name: String(name).trim(), username, phone: phoneStr, passwordHash, role: "admin" })
     .returning({ id: adminsTable.id, username: adminsTable.username, name: adminsTable.name, role: adminsTable.role });
 
-  req.log.info({ adminId: newAdmin.id, role: finalRole }, "New user registered");
+  req.log.info({ adminId: newAdmin.id }, "First admin registered");
   res.status(201).json({ success: true, admin: newAdmin });
 });
 
@@ -115,7 +109,7 @@ router.post("/auth/login", async (req, res) => {
   const token = generateToken(admin.id);
   res.json({
     token,
-    admin: { id: admin.id, username: admin.username, name: admin.name, role: admin.role },
+    admin: { id: admin.id, username: admin.username, name: admin.name, role: admin.role, linkedId: admin.linkedId ?? null },
   });
 });
 
@@ -136,7 +130,14 @@ router.get("/auth/me", async (req, res) => {
     res.status(401).json({ error: "المستخدم غير موجود" });
     return;
   }
-  res.json({ id: admin.id, username: admin.username, name: admin.name, role: admin.role, phone: admin.phone });
+  res.json({
+    id: admin.id,
+    username: admin.username,
+    name: admin.name,
+    role: admin.role,
+    phone: admin.phone,
+    linkedId: admin.linkedId ?? null,
+  });
 });
 
 router.post("/auth/logout", (_req, res) => {

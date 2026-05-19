@@ -30,7 +30,9 @@ export const LoginResponse = zod.object({
   "id": zod.number(),
   "username": zod.string(),
   "name": zod.string(),
-  "role": zod.string()
+  "role": zod.string(),
+  "phone": zod.string().nullish(),
+  "linkedId": zod.number().nullish()
 })
 })
 
@@ -42,7 +44,9 @@ export const GetMeResponse = zod.object({
   "id": zod.number(),
   "username": zod.string(),
   "name": zod.string(),
-  "role": zod.string()
+  "role": zod.string(),
+  "phone": zod.string().nullish(),
+  "linkedId": zod.number().nullish()
 })
 
 
@@ -600,5 +604,65 @@ export const GetRecentActivityResponseItem = zod.object({
   "entityName": zod.string().nullish()
 })
 export const GetRecentActivityResponse = zod.array(GetRecentActivityResponseItem)
+
+
+/**
+ * @summary List all system user accounts (admin only)
+ */
+export const ListUsersResponseItem = zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "name": zod.string(),
+  "role": zod.string(),
+  "phone": zod.string().nullish(),
+  "linkedId": zod.number().nullish(),
+  "createdAt": zod.string().optional()
+})
+export const ListUsersResponse = zod.array(ListUsersResponseItem)
+
+
+/**
+ * @summary Create a new user account (admin only)
+ */
+export const CreateUserBody = zod.object({
+  "name": zod.string(),
+  "username": zod.string(),
+  "phone": zod.string(),
+  "password": zod.string(),
+  "role": zod.string(),
+  "linkedId": zod.number().optional()
+})
+
+
+/**
+ * @summary Update a user account (admin only)
+ */
+export const UpdateUserParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateUserBody = zod.object({
+  "name": zod.string().optional(),
+  "role": zod.string().optional(),
+  "linkedId": zod.number().nullish()
+})
+
+export const UpdateUserResponse = zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "name": zod.string(),
+  "role": zod.string(),
+  "phone": zod.string().nullish(),
+  "linkedId": zod.number().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Delete a user account (admin only)
+ */
+export const DeleteUserParams = zod.object({
+  "id": zod.coerce.number()
+})
 
 

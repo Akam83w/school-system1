@@ -11,6 +11,7 @@ import { refreshOfflineCache } from "@/lib/offlineSync";
 import LoginPage from "@/pages/login";
 import RegisterPage from "@/pages/register";
 import AuditLogsPage from "@/pages/audit-logs";
+import AdminUsersPage from "@/pages/admin-users";
 import DashboardPage from "@/pages/dashboard";
 import StudentsPage from "@/pages/students";
 import StudentDetailPage from "@/pages/student-detail";
@@ -82,6 +83,9 @@ function Router() {
       </Route>
       <Route path="/audit-logs">
         <ProtectedRoute component={AuditLogsPage} />
+      </Route>
+      <Route path="/users">
+        <ProtectedRoute component={AdminUsersPage} />
       </Route>
       <Route path="/">
         {isAuthenticated() ? <Redirect to="/dashboard" /> : <Redirect to="/login" />}

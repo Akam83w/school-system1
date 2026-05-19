@@ -19,11 +19,43 @@ export interface Admin {
   username: string;
   name: string;
   role: string;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  linkedId?: number | null;
 }
 
 export interface AuthResponse {
   token: string;
   admin: Admin;
+}
+
+export interface SystemUser {
+  id: number;
+  username: string;
+  name: string;
+  role: string;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  linkedId?: number | null;
+  createdAt?: string;
+}
+
+export interface UserInput {
+  name: string;
+  username: string;
+  phone: string;
+  password: string;
+  role: string;
+  linkedId?: number;
+}
+
+export interface UserUpdate {
+  name?: string;
+  role?: string;
+  /** @nullable */
+  linkedId?: number | null;
 }
 
 export interface Student {

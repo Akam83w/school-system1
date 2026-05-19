@@ -26,6 +26,8 @@ tags:
     description: Grade management
   - name: dashboard
     description: Dashboard analytics
+  - name: users
+    description: System user management (admin only)
 
 paths:
   /healthz:
@@ -660,6 +662,84 @@ paths:
                 items:
                   $ref: "#/components/schemas/Activity"
 
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all system user accounts (admin only)
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SystemUser"
+        "403":
+          description: Forbidden
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Create a new user account (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserInput"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemUser"
+        "409":
+          description: Username or phone already in use
+
+  /users/{id}:
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update a user account (admin only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemUser"
+        "404":
+          description: User not found
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      summary: Delete a user account (admin only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "400":
+          description: Cannot delete own account
+
 components:
   schemas:
     HealthStatus:
@@ -685,6 +765,36 @@ components:
         admin:
           $ref: "#/components/schemas/Admin"
 
+    SystemUser:
+      type: object
+      required: [id, username, name, role]
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        name: { type: string }
+        role: { type: string }
+        phone: { type: ["string", "null"] }
+        linkedId: { type: ["integer", "null"] }
+        createdAt: { type: string }
+
+    UserInput:
+      type: object
+      required: [name, username, phone, password, role]
+      properties:
+        name: { type: string }
+        username: { type: string }
+        phone: { type: string }
+        password: { type: string }
+        role: { type: string }
+        linkedId: { type: integer }
+
+    UserUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        role: { type: string }
+        linkedId: { type: ["integer", "null"] }
+
     Admin:
       type: object
       required: [id, username, name, role]
@@ -693,6 +803,8 @@ components:
         username: { type: string }
         name: { type: string }
         role: { type: string }
+        phone: { type: ["string", "null"] }
+        linkedId: { type: ["integer", "null"] }
 
     Student:
       type: object
