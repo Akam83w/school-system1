@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { isAuthenticated } from "@/lib/auth";
 import LoginPage from "@/pages/login";
+import RegisterPage from "@/pages/register";
 import DashboardPage from "@/pages/dashboard";
 import StudentsPage from "@/pages/students";
 import StudentDetailPage from "@/pages/student-detail";
@@ -30,6 +31,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/login" component={LoginPage} />
+      <Route path="/register" component={RegisterPage} />
       <Route path="/dashboard">
         <ProtectedRoute component={DashboardPage} />
       </Route>

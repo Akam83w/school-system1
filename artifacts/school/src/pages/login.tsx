@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { useLogin } from "@workspace/api-client-react";
 import { setToken } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -70,6 +71,12 @@ export default function LoginPage() {
           </form>
           <div className="mt-4 p-3 bg-muted rounded-lg text-xs text-muted-foreground text-center">
             اسم المستخدم: <strong>admin</strong> — كلمة المرور: <strong>admin123</strong>
+          </div>
+          <div className="mt-4 text-center text-sm text-muted-foreground">
+            ليس لديك حساب؟{" "}
+            <Link href="/register" className="text-primary font-medium hover:underline">
+              إنشاء حساب جديد
+            </Link>
           </div>
         </div>
       </div>

@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { adminsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
-import { createHmac, randomBytes } from "crypto";
+import { eq, or } from "drizzle-orm";
+import { createHmac } from "crypto";
 
 const router = Router();
 
@@ -27,6 +27,43 @@ export function verifyToken(token: string): { adminId: number } | null {
     return null;
   }
 }
+
+router.post("/auth/register", async (req, res) => {
+  const { name, username, email, password } = req.body;
+  if (!name || !username || !password) {
+    res.status(400).json({ error: "الاسم واسم المستخدم وكلمة المرور مطلوبة" });
+    return;
+  }
+  if (typeof password !== "string" || password.length < 6) {
+    res.status(400).json({ error: "يجب أن تكون كلمة المرور 6 أحرف على الأقل" });
+    return;
+  }
+  const emailVal: string | undefined = typeof email === "string" && email.trim() ? email.trim() : undefined;
+
+  const existing = await db
+    .select({ id: adminsTable.id })
+    .from(adminsTable)
+    .where(
+      emailVal
+        ? or(eq(adminsTable.username, username), eq(adminsTable.email, emailVal))
+        : eq(adminsTable.username, username)
+    )
+    .limit(1);
+
+  if (existing.length > 0) {
+    res.status(409).json({ error: "اسم المستخدم أو البريد الإلكتروني مستخدم بالفعل" });
+    return;
+  }
+
+  const passwordHash = hashPassword(password);
+  const [newAdmin] = await db
+    .insert(adminsTable)
+    .values({ name, username, email: emailVal ?? null, passwordHash, role: "admin" })
+    .returning({ id: adminsTable.id, username: adminsTable.username, name: adminsTable.name, role: adminsTable.role });
+
+  req.log.info({ adminId: newAdmin.id }, "New admin registered");
+  res.status(201).json({ success: true, admin: newAdmin });
+});
 
 router.post("/auth/login", async (req, res) => {
   const { username, password } = req.body;
