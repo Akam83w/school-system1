@@ -22,9 +22,13 @@ async function verifyPassword(
     if (valid) return { valid: true, needsRehash: false };
   } catch {}
 
-  // Legacy HMAC fallback — auto-migration on first login
-  const legacyHash = createHmac("sha256", "school_salt_2024").update(password).digest("hex");
-  if (legacyHash === hash) return { valid: true, needsRehash: true };
+  // Legacy HMAC fallback — try both the old hardcoded salt and SESSION_SECRET
+  // (the seeder previously used SESSION_SECRET as the HMAC key in some versions)
+  const legacyKeys = ["school_salt_2024", process.env.SESSION_SECRET ?? "school_salt_2024"];
+  for (const key of legacyKeys) {
+    const legacyHash = createHmac("sha256", key).update(password).digest("hex");
+    if (legacyHash === hash) return { valid: true, needsRehash: true };
+  }
 
   return { valid: false, needsRehash: false };
 }
