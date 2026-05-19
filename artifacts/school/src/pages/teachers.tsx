@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Layout } from "@/components/layout";
 import {
   useListTeachers,
@@ -21,6 +22,7 @@ export default function TeachersPage() {
   const [form, setForm] = useState<TeacherForm>(emptyForm);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
 
   const { data: teachers, isLoading } = useListTeachers(
     { search: search || undefined },
@@ -31,10 +33,16 @@ export default function TeachersPage() {
   const updateMutation = useUpdateTeacher({ mutation: { onSuccess: () => { queryClient.invalidateQueries({ queryKey: getListTeachersQueryKey() }); setShowForm(false); setEditing(null); setForm(emptyForm); toast({ title: "تم تحديث بيانات المعلم" }); } } });
   const deleteMutation = useDeleteTeacher({ mutation: { onSuccess: () => { queryClient.invalidateQueries({ queryKey: getListTeachersQueryKey() }); toast({ title: "تم حذف المعلم" }); } } });
 
-  function openEdit(t: Teacher) {
+  function openEdit(e: React.MouseEvent, t: Teacher) {
+    e.stopPropagation();
     setEditing(t);
     setForm({ fullName: t.fullName, specialization: t.specialization, phone: t.phone, email: t.email ?? "", address: t.address ?? "", hireDate: t.hireDate ?? "", status: t.status });
     setShowForm(true);
+  }
+
+  function handleDelete(e: React.MouseEvent, t: Teacher) {
+    e.stopPropagation();
+    if (confirm("حذف هذا المعلم؟")) deleteMutation.mutate({ id: t.id });
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -56,10 +64,21 @@ export default function TeachersPage() {
             <h1 className="text-2xl font-bold">المعلمون</h1>
             <p className="text-muted-foreground text-sm">إدارة بيانات المعلمين</p>
           </div>
-          <button onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true); }} className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 shadow-sm">+ إضافة معلم</button>
+          <button
+            onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true); }}
+            className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 shadow-sm"
+          >
+            + إضافة معلم
+          </button>
         </div>
 
-        <input type="text" placeholder="بحث بالاسم..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full max-w-sm px-4 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
+        <input
+          type="text"
+          placeholder="بحث بالاسم..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full max-w-sm px-4 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+        />
 
         <div className="bg-card rounded-xl border border-card-border shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
@@ -72,33 +91,76 @@ export default function TeachersPage() {
                 </tr>
               </thead>
               <tbody>
-                {isLoading ? [...Array(4)].map((_, i) => (
-                  <tr key={i} className="border-b border-border">{[...Array(7)].map((__, j) => <td key={j} className="px-4 py-3"><div className="h-4 bg-muted animate-pulse rounded" /></td>)}</tr>
-                )) : (teachers ?? []).length === 0 ? (
-                  <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">لا توجد بيانات</td></tr>
-                ) : (teachers ?? []).map((t) => (
-                  <tr key={t.id} className="border-b border-border hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{t.teacherCode}</td>
-                    <td className="px-4 py-3 font-medium">{t.fullName}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{t.specialization}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{t.phone}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{t.hireDate}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${t.status === "active" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
-                        {t.status === "active" ? "فعال" : "غير فعال"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => openEdit(t)} className="text-xs px-2.5 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 font-medium">تعديل</button>
-                        <button onClick={() => { if (confirm("حذف هذا المعلم؟")) deleteMutation.mutate({ id: t.id }); }} className="text-xs px-2.5 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100 font-medium">حذف</button>
+                {isLoading ? (
+                  [...Array(4)].map((_, i) => (
+                    <tr key={i} className="border-b border-border">
+                      {[...Array(7)].map((__, j) => (
+                        <td key={j} className="px-4 py-3"><div className="h-4 bg-muted animate-pulse rounded" /></td>
+                      ))}
+                    </tr>
+                  ))
+                ) : (teachers ?? []).length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-12 text-center">
+                      <div>
+                        <p className="text-3xl mb-2">👩‍🏫</p>
+                        <p className="text-muted-foreground">لا توجد بيانات</p>
                       </div>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  (teachers ?? []).map((t) => (
+                    <tr
+                      key={t.id}
+                      onClick={() => navigate(`/teachers/${t.id}`)}
+                      className="border-b border-border last:border-0 hover:bg-primary/5 transition-colors cursor-pointer group"
+                    >
+                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{t.teacherCode}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2.5">
+                          {/* Avatar initials */}
+                          <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs flex-shrink-0">
+                            {t.fullName.split(" ").slice(0, 2).map((w) => w[0]).join("")}
+                          </div>
+                          <span className="font-medium group-hover:text-primary transition-colors">{t.fullName}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">{t.specialization}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{t.phone}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{t.hireDate}</td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${t.status === "active" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
+                          {t.status === "active" ? "فعال" : "غير فعال"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => openEdit(e, t)}
+                            className="text-xs px-2.5 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 font-medium"
+                          >
+                            تعديل
+                          </button>
+                          <button
+                            onClick={(e) => handleDelete(e, t)}
+                            className="text-xs px-2.5 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100 font-medium"
+                          >
+                            حذف
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
+          {/* Footer hint */}
+          {(teachers ?? []).length > 0 && (
+            <div className="px-4 py-2.5 border-t border-border bg-muted/20 text-xs text-muted-foreground text-left">
+              انقر على أي صف لعرض تفاصيل المعلم
+            </div>
+          )}
         </div>
       </div>
 
@@ -129,20 +191,39 @@ export default function TeachersPage() {
               ))}
               <div>
                 <label className="block text-sm font-medium mb-1">تاريخ التعيين</label>
-                <input type="date" value={form.hireDate} onChange={(e) => setForm({ ...form, hireDate: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                <input
+                  type="date"
+                  value={form.hireDate}
+                  onChange={(e) => setForm({ ...form, hireDate: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">الحالة</label>
-                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background">
+                <select
+                  value={form.status}
+                  onChange={(e) => setForm({ ...form, status: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background"
+                >
                   <option value="active">فعال</option>
                   <option value="inactive">غير فعال</option>
                 </select>
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="submit" disabled={isPending} className="flex-1 py-2.5 rounded-lg bg-primary text-white font-semibold text-sm hover:bg-primary/90 disabled:opacity-50">
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="flex-1 py-2.5 rounded-lg bg-primary text-white font-semibold text-sm hover:bg-primary/90 disabled:opacity-50"
+                >
                   {isPending ? "جاري الحفظ..." : editing ? "تحديث" : "إضافة"}
                 </button>
-                <button type="button" onClick={() => { setShowForm(false); setEditing(null); }} className="flex-1 py-2.5 rounded-lg border border-border text-sm font-semibold hover:bg-muted">إلغاء</button>
+                <button
+                  type="button"
+                  onClick={() => { setShowForm(false); setEditing(null); }}
+                  className="flex-1 py-2.5 rounded-lg border border-border text-sm font-semibold hover:bg-muted"
+                >
+                  إلغاء
+                </button>
               </div>
             </form>
           </div>

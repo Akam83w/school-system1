@@ -9,6 +9,7 @@ import DashboardPage from "@/pages/dashboard";
 import StudentsPage from "@/pages/students";
 import StudentDetailPage from "@/pages/student-detail";
 import TeachersPage from "@/pages/teachers";
+import TeacherDetailPage from "@/pages/teacher-detail";
 import ClassesPage from "@/pages/classes";
 import ClassDetailPage from "@/pages/class-detail";
 import SubjectsPage from "@/pages/subjects";
@@ -37,6 +38,9 @@ function Router() {
       </Route>
       <Route path="/students">
         <ProtectedRoute component={StudentsPage} />
+      </Route>
+      <Route path="/teachers/:id">
+        {(params) => isAuthenticated() ? <TeacherDetailPage id={Number(params.id)} /> : <Redirect to="/login" />}
       </Route>
       <Route path="/teachers">
         <ProtectedRoute component={TeachersPage} />
