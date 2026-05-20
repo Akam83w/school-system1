@@ -35,7 +35,9 @@ minimumReleaseAgeExclude:
   - stripe-replit-sync
 
 packages:
-  - artifacts/*
+  # Exclude mockup-sandbox from production builds (dev-only tool)
+  - artifacts/api-server
+  - artifacts/school
   - lib/*
   - lib/integrations/*
   - scripts
