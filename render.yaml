@@ -5,7 +5,7 @@ services:
     region: oregon
     plan: starter
     buildCommand: pnpm install && pnpm run generate && pnpm run build && pnpm --filter @workspace/db run push
-    startCommand: cd artifacts/api-server && pnpm run start
+    startCommand: pnpm --filter @workspace/api-server run start
     envVars:
       - key: NODE_ENV
         value: production
@@ -16,3 +16,4 @@ services:
       - key: DATABASE_URL
         scope: run
         sync: false
+        
