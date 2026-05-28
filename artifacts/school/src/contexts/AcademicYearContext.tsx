@@ -10,12 +10,9 @@ export interface AcademicYearEntity {
 }
 
 interface AcademicYearContextValue {
-  /** The year the user has selected in the UI (persisted in localStorage) */
   selectedYear: string;
   setSelectedYear: (year: string) => void;
-  /** The school's officially set "current" year (from DB) */
   currentYear: string;
-  /** All 80 year entities (2020-2021 … 2099-2100), sorted by startYear asc */
   allYears: AcademicYearEntity[];
   isLoading: boolean;
 }
@@ -32,16 +29,20 @@ const AcademicYearContext = createContext<AcademicYearContextValue>({
 });
 
 export function AcademicYearProvider({ children }: { children: ReactNode }) {
-  const { data: rawYears = [], isLoading } = useListAcademicYears();
+  const { data: rawYears, isLoading } = useListAcademicYears();
 
-  const allYears = rawYears as AcademicYearEntity[];
+  // تعديل دفاعي: نضمن دائماً أن تكون allYears مصفوفة، حتى لو كانت البيانات فارغة أو غير موجودة
+  const allYears = Array.isArray(rawYears) ? (rawYears as AcademicYearEntity[]) : [];
+  
+  // تعديل دفاعي: استخدام Optional Chaining لتجنب الانهيار إذا لم توجد السنة الحالية
   const currentYear = allYears.find((y) => y.isCurrent)?.label ?? DEFAULT_YEAR;
 
   const [selectedYear, setSelectedYearState] = useState<string>(() => {
-    return localStorage.getItem(STORAGE_KEY) ?? DEFAULT_YEAR;
+    // محاولة استرجاع السنة من المتصفح، أو استخدام السنة الافتراضية
+    return localStorage.getItem(STORAGE_KEY) ?? currentYear ?? DEFAULT_YEAR;
   });
 
-  // When years first load and nothing is persisted, default to the school's current year
+  // عند تحميل البيانات لأول مرة، نحدث السنة المختارة إذا لم يقم المستخدم بتغييرها
   useEffect(() => {
     if (!localStorage.getItem(STORAGE_KEY) && currentYear) {
       setSelectedYearState(currentYear);
@@ -62,6 +63,4 @@ export function AcademicYearProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useAcademicYear() {
-  return useContext(AcademicYearContext);
-}
+export const useAcademicYear = () => useContext(AcademicYearContext);
