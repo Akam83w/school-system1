@@ -5,8 +5,20 @@ import { eq, count, and } from "drizzle-orm";
 import { createHmac } from "crypto";
 import bcrypt from "bcryptjs";
 import { isRateLimited, recordFailedAttempt, clearFailedAttempts, getRemainingSeconds } from "../lib/rateLimiter";
+import { logger } from "./lib/logger";
 
 const router = Router();
+
+// ============================================================================
+// VALIDATION: Ensure SESSION_SECRET is set at module load time
+// ============================================================================
+const SESSION_SECRET = process.env.SESSION_SECRET;
+if (!SESSION_SECRET) {
+  throw new Error(
+    "FATAL: SESSION_SECRET environment variable is required but was not provided. " +
+    "Please set SESSION_SECRET in your .env file (e.g., SESSION_SECRET=\"your-secret-key\")."
+  );
+}
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
@@ -22,20 +34,18 @@ async function verifyPassword(
     if (valid) return { valid: true, needsRehash: false };
   } catch {}
 
-  // Legacy HMAC fallback — try both the old hardcoded salt and SESSION_SECRET
-  // (the seeder previously used SESSION_SECRET as the HMAC key in some versions)
-  const legacyKeys = ["school_salt_2024", process.env.SESSION_SECRET ?? "school_salt_2024"];
-  for (const key of legacyKeys) {
-    const legacyHash = createHmac("sha256", key).update(password).digest("hex");
-    if (legacyHash === hash) return { valid: true, needsRehash: true };
-  }
+  // ⚠️  REMOVED: Legacy HMAC fallback removed for security/consistency
+  // All passwords must be bcrypt hashed. Legacy passwords should be migrated
+  // via password reset or admin re-creation.
 
   return { valid: false, needsRehash: false };
 }
 
 function generateToken(adminId: number): string {
-  const payload = Buffer.from(JSON.stringify({ adminId, ts: Date.now() })).toString("base64");
-  const sig = createHmac("sha256", process.env.SESSION_SECRET ?? "school_secret")
+  const payload = Buffer.from(
+    JSON.stringify({ adminId, ts: Date.now() })
+  ).toString("base64");
+  const sig = createHmac("sha256", SESSION_SECRET)
     .update(payload)
     .digest("hex");
   return `${payload}.${sig}`;
@@ -44,12 +54,13 @@ function generateToken(adminId: number): string {
 export function verifyToken(token: string): { adminId: number } | null {
   try {
     const [payload, sig] = token.split(".");
-    const expected = createHmac("sha256", process.env.SESSION_SECRET ?? "school_secret")
+    const expected = createHmac("sha256", SESSION_SECRET)
       .update(payload)
       .digest("hex");
     if (sig !== expected) return null;
     return JSON.parse(Buffer.from(payload, "base64").toString());
-  } catch {
+  } catch (err) {
+    logger.warn({ err }, "Token verification failed");
     return null;
   }
 }
@@ -226,7 +237,9 @@ router.post("/auth/login", async (req, res) => {
         .set({ passwordHash: newHash })
         .where(eq(adminsTable.id, admin.id));
       req.log.info({ adminId: admin.id }, "Password auto-upgraded to bcrypt");
-    } catch {}
+    } catch (err) {
+      req.log.warn({ err }, "Failed to upgrade password hash");
+    }
   }
 
   clearFailedAttempts(ip);
