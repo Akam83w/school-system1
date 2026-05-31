@@ -60,7 +60,6 @@ import type {
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
-import type { ErrorType , BodyType } from '../custom-fetch';
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -104,7 +103,7 @@ export const getHealthCheckQueryKey = () => {
     }
 
 
-export const getHealthCheckQueryOptions = <TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getHealthCheckQueryOptions = <TData = Awaited<ReturnType<typeof healthCheck>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -123,14 +122,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type HealthCheckQueryResult = NonNullable<Awaited<ReturnType<typeof healthCheck>>>
-export type HealthCheckQueryError = ErrorType<unknown>
+export type HealthCheckQueryError = unknown
 
 
 /**
  * @summary Health check
  */
 
-export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<unknown>>(
+export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, TError = unknown>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -173,9 +172,9 @@ export const login = async (loginInput: LoginInput, options?: RequestInit): Prom
 
 
 
-export const getLoginMutationOptions = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof login>>, TError,{data: BodyType<LoginInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof login>>, TError,{data: BodyType<LoginInput>}, TContext> => {
+export const getLoginMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof login>>, TError,{data: LoginInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof login>>, TError,{data: LoginInput}, TContext> => {
 
 const mutationKey = ['login'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -187,7 +186,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof login>>, {data: BodyType<LoginInput>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof login>>, {data: LoginInput}> = (props) => {
           const {data} = props ?? {};
 
           return  login(data,requestOptions)
@@ -201,18 +200,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type LoginMutationResult = NonNullable<Awaited<ReturnType<typeof login>>>
-    export type LoginMutationBody = BodyType<LoginInput>
-    export type LoginMutationError = ErrorType<void>
+    export type LoginMutationBody = LoginInput
+    export type LoginMutationError = void
 
     /**
  * @summary Admin login
  */
-export const useLogin = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof login>>, TError,{data: BodyType<LoginInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useLogin = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof login>>, TError,{data: LoginInput}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof login>>,
         TError,
-        {data: BodyType<LoginInput>},
+        {data: LoginInput},
         TContext
       > => {
       return useMutation(getLoginMutationOptions(options));
@@ -251,7 +250,7 @@ export const getGetMeQueryKey = () => {
     }
 
 
-export const getGetMeQueryOptions = <TData = Awaited<ReturnType<typeof getMe>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetMeQueryOptions = <TData = Awaited<ReturnType<typeof getMe>>, TError = void>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -270,14 +269,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetMeQueryResult = NonNullable<Awaited<ReturnType<typeof getMe>>>
-export type GetMeQueryError = ErrorType<void>
+export type GetMeQueryError = void
 
 
 /**
  * @summary Get current user
  */
 
-export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = ErrorType<void>>(
+export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = void>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -320,7 +319,7 @@ export const logout = async ( options?: RequestInit): Promise<void> => {
 
 
 
-export const getLogoutMutationOptions = <TError = ErrorType<unknown>,
+export const getLogoutMutationOptions = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logout>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof logout>>, TError,void, TContext> => {
 
@@ -349,12 +348,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type LogoutMutationResult = NonNullable<Awaited<ReturnType<typeof logout>>>
 
-    export type LogoutMutationError = ErrorType<unknown>
+    export type LogoutMutationError = unknown
 
     /**
  * @summary Logout
  */
-export const useLogout = <TError = ErrorType<unknown>,
+export const useLogout = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logout>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof logout>>,
@@ -405,7 +404,7 @@ export const getListStudentsQueryKey = (params?: ListStudentsParams,) => {
     }
 
 
-export const getListStudentsQueryOptions = <TData = Awaited<ReturnType<typeof listStudents>>, TError = ErrorType<unknown>>(params?: ListStudentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listStudents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListStudentsQueryOptions = <TData = Awaited<ReturnType<typeof listStudents>>, TError = unknown>(params?: ListStudentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listStudents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -424,14 +423,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ListStudentsQueryResult = NonNullable<Awaited<ReturnType<typeof listStudents>>>
-export type ListStudentsQueryError = ErrorType<unknown>
+export type ListStudentsQueryError = unknown
 
 
 /**
  * @summary List all students
  */
 
-export function useListStudents<TData = Awaited<ReturnType<typeof listStudents>>, TError = ErrorType<unknown>>(
+export function useListStudents<TData = Awaited<ReturnType<typeof listStudents>>, TError = unknown>(
  params?: ListStudentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listStudents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -474,9 +473,9 @@ export const createStudent = async (studentInput: StudentInput, options?: Reques
 
 
 
-export const getCreateStudentMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createStudent>>, TError,{data: BodyType<StudentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof createStudent>>, TError,{data: BodyType<StudentInput>}, TContext> => {
+export const getCreateStudentMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createStudent>>, TError,{data: StudentInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createStudent>>, TError,{data: StudentInput}, TContext> => {
 
 const mutationKey = ['createStudent'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -488,7 +487,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createStudent>>, {data: BodyType<StudentInput>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createStudent>>, {data: StudentInput}> = (props) => {
           const {data} = props ?? {};
 
           return  createStudent(data,requestOptions)
@@ -502,18 +501,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type CreateStudentMutationResult = NonNullable<Awaited<ReturnType<typeof createStudent>>>
-    export type CreateStudentMutationBody = BodyType<StudentInput>
-    export type CreateStudentMutationError = ErrorType<unknown>
+    export type CreateStudentMutationBody = StudentInput
+    export type CreateStudentMutationError = unknown
 
     /**
  * @summary Create a student
  */
-export const useCreateStudent = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createStudent>>, TError,{data: BodyType<StudentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useCreateStudent = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createStudent>>, TError,{data: StudentInput}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createStudent>>,
         TError,
-        {data: BodyType<StudentInput>},
+        {data: StudentInput},
         TContext
       > => {
       return useMutation(getCreateStudentMutationOptions(options));
@@ -552,7 +551,7 @@ export const getGetStudentQueryKey = (id: number,) => {
     }
 
 
-export const getGetStudentQueryOptions = <TData = Awaited<ReturnType<typeof getStudent>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStudent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetStudentQueryOptions = <TData = Awaited<ReturnType<typeof getStudent>>, TError = void>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStudent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -571,14 +570,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetStudentQueryResult = NonNullable<Awaited<ReturnType<typeof getStudent>>>
-export type GetStudentQueryError = ErrorType<void>
+export type GetStudentQueryError = void
 
 
 /**
  * @summary Get a student
  */
 
-export function useGetStudent<TData = Awaited<ReturnType<typeof getStudent>>, TError = ErrorType<void>>(
+export function useGetStudent<TData = Awaited<ReturnType<typeof getStudent>>, TError = void>(
  id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStudent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -622,9 +621,9 @@ export const updateStudent = async (id: number,
 
 
 
-export const getUpdateStudentMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateStudent>>, TError,{id: number;data: BodyType<StudentUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof updateStudent>>, TError,{id: number;data: BodyType<StudentUpdate>}, TContext> => {
+export const getUpdateStudentMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateStudent>>, TError,{id: number;data: StudentUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateStudent>>, TError,{id: number;data: StudentUpdate}, TContext> => {
 
 const mutationKey = ['updateStudent'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -636,7 +635,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateStudent>>, {id: number;data: BodyType<StudentUpdate>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateStudent>>, {id: number;data: StudentUpdate}> = (props) => {
           const {id,data} = props ?? {};
 
           return  updateStudent(id,data,requestOptions)
@@ -650,18 +649,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type UpdateStudentMutationResult = NonNullable<Awaited<ReturnType<typeof updateStudent>>>
-    export type UpdateStudentMutationBody = BodyType<StudentUpdate>
-    export type UpdateStudentMutationError = ErrorType<unknown>
+    export type UpdateStudentMutationBody = StudentUpdate
+    export type UpdateStudentMutationError = unknown
 
     /**
  * @summary Update a student
  */
-export const useUpdateStudent = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateStudent>>, TError,{id: number;data: BodyType<StudentUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useUpdateStudent = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateStudent>>, TError,{id: number;data: StudentUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updateStudent>>,
         TError,
-        {id: number;data: BodyType<StudentUpdate>},
+        {id: number;data: StudentUpdate},
         TContext
       > => {
       return useMutation(getUpdateStudentMutationOptions(options));
@@ -692,7 +691,7 @@ export const deleteStudent = async (id: number, options?: RequestInit): Promise<
 
 
 
-export const getDeleteStudentMutationOptions = <TError = ErrorType<unknown>,
+export const getDeleteStudentMutationOptions = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteStudent>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteStudent>>, TError,{id: number}, TContext> => {
 
@@ -721,12 +720,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteStudentMutationResult = NonNullable<Awaited<ReturnType<typeof deleteStudent>>>
 
-    export type DeleteStudentMutationError = ErrorType<unknown>
+    export type DeleteStudentMutationError = unknown
 
     /**
  * @summary Delete a student
  */
-export const useDeleteStudent = <TError = ErrorType<unknown>,
+export const useDeleteStudent = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteStudent>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteStudent>>,
@@ -777,7 +776,7 @@ export const getListTeachersQueryKey = (params?: ListTeachersParams,) => {
     }
 
 
-export const getListTeachersQueryOptions = <TData = Awaited<ReturnType<typeof listTeachers>>, TError = ErrorType<unknown>>(params?: ListTeachersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTeachers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListTeachersQueryOptions = <TData = Awaited<ReturnType<typeof listTeachers>>, TError = unknown>(params?: ListTeachersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTeachers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -796,14 +795,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ListTeachersQueryResult = NonNullable<Awaited<ReturnType<typeof listTeachers>>>
-export type ListTeachersQueryError = ErrorType<unknown>
+export type ListTeachersQueryError = unknown
 
 
 /**
  * @summary List all teachers
  */
 
-export function useListTeachers<TData = Awaited<ReturnType<typeof listTeachers>>, TError = ErrorType<unknown>>(
+export function useListTeachers<TData = Awaited<ReturnType<typeof listTeachers>>, TError = unknown>(
  params?: ListTeachersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTeachers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -846,9 +845,9 @@ export const createTeacher = async (teacherInput: TeacherInput, options?: Reques
 
 
 
-export const getCreateTeacherMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTeacher>>, TError,{data: BodyType<TeacherInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof createTeacher>>, TError,{data: BodyType<TeacherInput>}, TContext> => {
+export const getCreateTeacherMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTeacher>>, TError,{data: TeacherInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createTeacher>>, TError,{data: TeacherInput}, TContext> => {
 
 const mutationKey = ['createTeacher'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -860,7 +859,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createTeacher>>, {data: BodyType<TeacherInput>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createTeacher>>, {data: TeacherInput}> = (props) => {
           const {data} = props ?? {};
 
           return  createTeacher(data,requestOptions)
@@ -874,18 +873,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type CreateTeacherMutationResult = NonNullable<Awaited<ReturnType<typeof createTeacher>>>
-    export type CreateTeacherMutationBody = BodyType<TeacherInput>
-    export type CreateTeacherMutationError = ErrorType<unknown>
+    export type CreateTeacherMutationBody = TeacherInput
+    export type CreateTeacherMutationError = unknown
 
     /**
  * @summary Create a teacher
  */
-export const useCreateTeacher = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTeacher>>, TError,{data: BodyType<TeacherInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useCreateTeacher = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTeacher>>, TError,{data: TeacherInput}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createTeacher>>,
         TError,
-        {data: BodyType<TeacherInput>},
+        {data: TeacherInput},
         TContext
       > => {
       return useMutation(getCreateTeacherMutationOptions(options));
@@ -924,7 +923,7 @@ export const getGetTeacherQueryKey = (id: number,) => {
     }
 
 
-export const getGetTeacherQueryOptions = <TData = Awaited<ReturnType<typeof getTeacher>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTeacher>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetTeacherQueryOptions = <TData = Awaited<ReturnType<typeof getTeacher>>, TError = void>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTeacher>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -943,14 +942,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetTeacherQueryResult = NonNullable<Awaited<ReturnType<typeof getTeacher>>>
-export type GetTeacherQueryError = ErrorType<void>
+export type GetTeacherQueryError = void
 
 
 /**
  * @summary Get a teacher
  */
 
-export function useGetTeacher<TData = Awaited<ReturnType<typeof getTeacher>>, TError = ErrorType<void>>(
+export function useGetTeacher<TData = Awaited<ReturnType<typeof getTeacher>>, TError = void>(
  id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTeacher>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -994,9 +993,9 @@ export const updateTeacher = async (id: number,
 
 
 
-export const getUpdateTeacherMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTeacher>>, TError,{id: number;data: BodyType<TeacherUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof updateTeacher>>, TError,{id: number;data: BodyType<TeacherUpdate>}, TContext> => {
+export const getUpdateTeacherMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTeacher>>, TError,{id: number;data: TeacherUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateTeacher>>, TError,{id: number;data: TeacherUpdate}, TContext> => {
 
 const mutationKey = ['updateTeacher'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -1008,7 +1007,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateTeacher>>, {id: number;data: BodyType<TeacherUpdate>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateTeacher>>, {id: number;data: TeacherUpdate}> = (props) => {
           const {id,data} = props ?? {};
 
           return  updateTeacher(id,data,requestOptions)
@@ -1022,18 +1021,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type UpdateTeacherMutationResult = NonNullable<Awaited<ReturnType<typeof updateTeacher>>>
-    export type UpdateTeacherMutationBody = BodyType<TeacherUpdate>
-    export type UpdateTeacherMutationError = ErrorType<unknown>
+    export type UpdateTeacherMutationBody = TeacherUpdate
+    export type UpdateTeacherMutationError = unknown
 
     /**
  * @summary Update a teacher
  */
-export const useUpdateTeacher = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTeacher>>, TError,{id: number;data: BodyType<TeacherUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useUpdateTeacher = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTeacher>>, TError,{id: number;data: TeacherUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updateTeacher>>,
         TError,
-        {id: number;data: BodyType<TeacherUpdate>},
+        {id: number;data: TeacherUpdate},
         TContext
       > => {
       return useMutation(getUpdateTeacherMutationOptions(options));
@@ -1064,7 +1063,7 @@ export const deleteTeacher = async (id: number, options?: RequestInit): Promise<
 
 
 
-export const getDeleteTeacherMutationOptions = <TError = ErrorType<unknown>,
+export const getDeleteTeacherMutationOptions = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTeacher>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteTeacher>>, TError,{id: number}, TContext> => {
 
@@ -1093,12 +1092,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteTeacherMutationResult = NonNullable<Awaited<ReturnType<typeof deleteTeacher>>>
 
-    export type DeleteTeacherMutationError = ErrorType<unknown>
+    export type DeleteTeacherMutationError = unknown
 
     /**
  * @summary Delete a teacher
  */
-export const useDeleteTeacher = <TError = ErrorType<unknown>,
+export const useDeleteTeacher = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTeacher>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteTeacher>>,
@@ -1142,7 +1141,7 @@ export const getListClassesQueryKey = () => {
     }
 
 
-export const getListClassesQueryOptions = <TData = Awaited<ReturnType<typeof listClasses>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listClasses>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListClassesQueryOptions = <TData = Awaited<ReturnType<typeof listClasses>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listClasses>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1161,14 +1160,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ListClassesQueryResult = NonNullable<Awaited<ReturnType<typeof listClasses>>>
-export type ListClassesQueryError = ErrorType<unknown>
+export type ListClassesQueryError = unknown
 
 
 /**
  * @summary List all classes
  */
 
-export function useListClasses<TData = Awaited<ReturnType<typeof listClasses>>, TError = ErrorType<unknown>>(
+export function useListClasses<TData = Awaited<ReturnType<typeof listClasses>>, TError = unknown>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listClasses>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1211,9 +1210,9 @@ export const createClass = async (classInput: ClassInput, options?: RequestInit)
 
 
 
-export const getCreateClassMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createClass>>, TError,{data: BodyType<ClassInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof createClass>>, TError,{data: BodyType<ClassInput>}, TContext> => {
+export const getCreateClassMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createClass>>, TError,{data: ClassInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createClass>>, TError,{data: ClassInput}, TContext> => {
 
 const mutationKey = ['createClass'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -1225,7 +1224,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createClass>>, {data: BodyType<ClassInput>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createClass>>, {data: ClassInput}> = (props) => {
           const {data} = props ?? {};
 
           return  createClass(data,requestOptions)
@@ -1239,18 +1238,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type CreateClassMutationResult = NonNullable<Awaited<ReturnType<typeof createClass>>>
-    export type CreateClassMutationBody = BodyType<ClassInput>
-    export type CreateClassMutationError = ErrorType<unknown>
+    export type CreateClassMutationBody = ClassInput
+    export type CreateClassMutationError = unknown
 
     /**
  * @summary Create a class
  */
-export const useCreateClass = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createClass>>, TError,{data: BodyType<ClassInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useCreateClass = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createClass>>, TError,{data: ClassInput}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createClass>>,
         TError,
-        {data: BodyType<ClassInput>},
+        {data: ClassInput},
         TContext
       > => {
       return useMutation(getCreateClassMutationOptions(options));
@@ -1289,7 +1288,7 @@ export const getGetClassQueryKey = (id: number,) => {
     }
 
 
-export const getGetClassQueryOptions = <TData = Awaited<ReturnType<typeof getClass>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getClass>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetClassQueryOptions = <TData = Awaited<ReturnType<typeof getClass>>, TError = void>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getClass>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1308,14 +1307,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetClassQueryResult = NonNullable<Awaited<ReturnType<typeof getClass>>>
-export type GetClassQueryError = ErrorType<void>
+export type GetClassQueryError = void
 
 
 /**
  * @summary Get a class
  */
 
-export function useGetClass<TData = Awaited<ReturnType<typeof getClass>>, TError = ErrorType<void>>(
+export function useGetClass<TData = Awaited<ReturnType<typeof getClass>>, TError = void>(
  id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getClass>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1359,9 +1358,9 @@ export const updateClass = async (id: number,
 
 
 
-export const getUpdateClassMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateClass>>, TError,{id: number;data: BodyType<ClassUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof updateClass>>, TError,{id: number;data: BodyType<ClassUpdate>}, TContext> => {
+export const getUpdateClassMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateClass>>, TError,{id: number;data: ClassUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateClass>>, TError,{id: number;data: ClassUpdate}, TContext> => {
 
 const mutationKey = ['updateClass'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -1373,7 +1372,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateClass>>, {id: number;data: BodyType<ClassUpdate>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateClass>>, {id: number;data: ClassUpdate}> = (props) => {
           const {id,data} = props ?? {};
 
           return  updateClass(id,data,requestOptions)
@@ -1387,18 +1386,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type UpdateClassMutationResult = NonNullable<Awaited<ReturnType<typeof updateClass>>>
-    export type UpdateClassMutationBody = BodyType<ClassUpdate>
-    export type UpdateClassMutationError = ErrorType<unknown>
+    export type UpdateClassMutationBody = ClassUpdate
+    export type UpdateClassMutationError = unknown
 
     /**
  * @summary Update a class
  */
-export const useUpdateClass = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateClass>>, TError,{id: number;data: BodyType<ClassUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useUpdateClass = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateClass>>, TError,{id: number;data: ClassUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updateClass>>,
         TError,
-        {id: number;data: BodyType<ClassUpdate>},
+        {id: number;data: ClassUpdate},
         TContext
       > => {
       return useMutation(getUpdateClassMutationOptions(options));
@@ -1429,7 +1428,7 @@ export const deleteClass = async (id: number, options?: RequestInit): Promise<vo
 
 
 
-export const getDeleteClassMutationOptions = <TError = ErrorType<unknown>,
+export const getDeleteClassMutationOptions = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteClass>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteClass>>, TError,{id: number}, TContext> => {
 
@@ -1458,12 +1457,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteClassMutationResult = NonNullable<Awaited<ReturnType<typeof deleteClass>>>
 
-    export type DeleteClassMutationError = ErrorType<unknown>
+    export type DeleteClassMutationError = unknown
 
     /**
  * @summary Delete a class
  */
-export const useDeleteClass = <TError = ErrorType<unknown>,
+export const useDeleteClass = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteClass>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteClass>>,
@@ -1507,7 +1506,7 @@ export const getListSubjectsQueryKey = () => {
     }
 
 
-export const getListSubjectsQueryOptions = <TData = Awaited<ReturnType<typeof listSubjects>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSubjects>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListSubjectsQueryOptions = <TData = Awaited<ReturnType<typeof listSubjects>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSubjects>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1526,14 +1525,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ListSubjectsQueryResult = NonNullable<Awaited<ReturnType<typeof listSubjects>>>
-export type ListSubjectsQueryError = ErrorType<unknown>
+export type ListSubjectsQueryError = unknown
 
 
 /**
  * @summary List all subjects
  */
 
-export function useListSubjects<TData = Awaited<ReturnType<typeof listSubjects>>, TError = ErrorType<unknown>>(
+export function useListSubjects<TData = Awaited<ReturnType<typeof listSubjects>>, TError = unknown>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSubjects>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1576,9 +1575,9 @@ export const createSubject = async (subjectInput: SubjectInput, options?: Reques
 
 
 
-export const getCreateSubjectMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSubject>>, TError,{data: BodyType<SubjectInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof createSubject>>, TError,{data: BodyType<SubjectInput>}, TContext> => {
+export const getCreateSubjectMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSubject>>, TError,{data: SubjectInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSubject>>, TError,{data: SubjectInput}, TContext> => {
 
 const mutationKey = ['createSubject'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -1590,7 +1589,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSubject>>, {data: BodyType<SubjectInput>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSubject>>, {data: SubjectInput}> = (props) => {
           const {data} = props ?? {};
 
           return  createSubject(data,requestOptions)
@@ -1604,18 +1603,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type CreateSubjectMutationResult = NonNullable<Awaited<ReturnType<typeof createSubject>>>
-    export type CreateSubjectMutationBody = BodyType<SubjectInput>
-    export type CreateSubjectMutationError = ErrorType<unknown>
+    export type CreateSubjectMutationBody = SubjectInput
+    export type CreateSubjectMutationError = unknown
 
     /**
  * @summary Create a subject
  */
-export const useCreateSubject = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSubject>>, TError,{data: BodyType<SubjectInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useCreateSubject = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSubject>>, TError,{data: SubjectInput}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createSubject>>,
         TError,
-        {data: BodyType<SubjectInput>},
+        {data: SubjectInput},
         TContext
       > => {
       return useMutation(getCreateSubjectMutationOptions(options));
@@ -1647,9 +1646,9 @@ export const updateSubject = async (id: number,
 
 
 
-export const getUpdateSubjectMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSubject>>, TError,{id: number;data: BodyType<SubjectUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof updateSubject>>, TError,{id: number;data: BodyType<SubjectUpdate>}, TContext> => {
+export const getUpdateSubjectMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSubject>>, TError,{id: number;data: SubjectUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSubject>>, TError,{id: number;data: SubjectUpdate}, TContext> => {
 
 const mutationKey = ['updateSubject'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -1661,7 +1660,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSubject>>, {id: number;data: BodyType<SubjectUpdate>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSubject>>, {id: number;data: SubjectUpdate}> = (props) => {
           const {id,data} = props ?? {};
 
           return  updateSubject(id,data,requestOptions)
@@ -1675,18 +1674,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type UpdateSubjectMutationResult = NonNullable<Awaited<ReturnType<typeof updateSubject>>>
-    export type UpdateSubjectMutationBody = BodyType<SubjectUpdate>
-    export type UpdateSubjectMutationError = ErrorType<unknown>
+    export type UpdateSubjectMutationBody = SubjectUpdate
+    export type UpdateSubjectMutationError = unknown
 
     /**
  * @summary Update a subject
  */
-export const useUpdateSubject = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSubject>>, TError,{id: number;data: BodyType<SubjectUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useUpdateSubject = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSubject>>, TError,{id: number;data: SubjectUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updateSubject>>,
         TError,
-        {id: number;data: BodyType<SubjectUpdate>},
+        {id: number;data: SubjectUpdate},
         TContext
       > => {
       return useMutation(getUpdateSubjectMutationOptions(options));
@@ -1717,7 +1716,7 @@ export const deleteSubject = async (id: number, options?: RequestInit): Promise<
 
 
 
-export const getDeleteSubjectMutationOptions = <TError = ErrorType<unknown>,
+export const getDeleteSubjectMutationOptions = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSubject>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteSubject>>, TError,{id: number}, TContext> => {
 
@@ -1746,12 +1745,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteSubjectMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSubject>>>
 
-    export type DeleteSubjectMutationError = ErrorType<unknown>
+    export type DeleteSubjectMutationError = unknown
 
     /**
  * @summary Delete a subject
  */
-export const useDeleteSubject = <TError = ErrorType<unknown>,
+export const useDeleteSubject = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSubject>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteSubject>>,
@@ -1802,7 +1801,7 @@ export const getListAttendanceQueryKey = (params?: ListAttendanceParams,) => {
     }
 
 
-export const getListAttendanceQueryOptions = <TData = Awaited<ReturnType<typeof listAttendance>>, TError = ErrorType<unknown>>(params?: ListAttendanceParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAttendance>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListAttendanceQueryOptions = <TData = Awaited<ReturnType<typeof listAttendance>>, TError = unknown>(params?: ListAttendanceParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAttendance>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1821,14 +1820,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ListAttendanceQueryResult = NonNullable<Awaited<ReturnType<typeof listAttendance>>>
-export type ListAttendanceQueryError = ErrorType<unknown>
+export type ListAttendanceQueryError = unknown
 
 
 /**
  * @summary List attendance records
  */
 
-export function useListAttendance<TData = Awaited<ReturnType<typeof listAttendance>>, TError = ErrorType<unknown>>(
+export function useListAttendance<TData = Awaited<ReturnType<typeof listAttendance>>, TError = unknown>(
  params?: ListAttendanceParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAttendance>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -1871,9 +1870,9 @@ export const recordAttendance = async (attendanceInput: AttendanceInput, options
 
 
 
-export const getRecordAttendanceMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordAttendance>>, TError,{data: BodyType<AttendanceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof recordAttendance>>, TError,{data: BodyType<AttendanceInput>}, TContext> => {
+export const getRecordAttendanceMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordAttendance>>, TError,{data: AttendanceInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordAttendance>>, TError,{data: AttendanceInput}, TContext> => {
 
 const mutationKey = ['recordAttendance'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -1885,7 +1884,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordAttendance>>, {data: BodyType<AttendanceInput>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordAttendance>>, {data: AttendanceInput}> = (props) => {
           const {data} = props ?? {};
 
           return  recordAttendance(data,requestOptions)
@@ -1899,18 +1898,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type RecordAttendanceMutationResult = NonNullable<Awaited<ReturnType<typeof recordAttendance>>>
-    export type RecordAttendanceMutationBody = BodyType<AttendanceInput>
-    export type RecordAttendanceMutationError = ErrorType<unknown>
+    export type RecordAttendanceMutationBody = AttendanceInput
+    export type RecordAttendanceMutationError = unknown
 
     /**
  * @summary Record attendance
  */
-export const useRecordAttendance = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordAttendance>>, TError,{data: BodyType<AttendanceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useRecordAttendance = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordAttendance>>, TError,{data: AttendanceInput}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof recordAttendance>>,
         TError,
-        {data: BodyType<AttendanceInput>},
+        {data: AttendanceInput},
         TContext
       > => {
       return useMutation(getRecordAttendanceMutationOptions(options));
@@ -1942,9 +1941,9 @@ export const updateAttendance = async (id: number,
 
 
 
-export const getUpdateAttendanceMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAttendance>>, TError,{id: number;data: BodyType<AttendanceUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof updateAttendance>>, TError,{id: number;data: BodyType<AttendanceUpdate>}, TContext> => {
+export const getUpdateAttendanceMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAttendance>>, TError,{id: number;data: AttendanceUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAttendance>>, TError,{id: number;data: AttendanceUpdate}, TContext> => {
 
 const mutationKey = ['updateAttendance'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -1956,7 +1955,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAttendance>>, {id: number;data: BodyType<AttendanceUpdate>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAttendance>>, {id: number;data: AttendanceUpdate}> = (props) => {
           const {id,data} = props ?? {};
 
           return  updateAttendance(id,data,requestOptions)
@@ -1970,18 +1969,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type UpdateAttendanceMutationResult = NonNullable<Awaited<ReturnType<typeof updateAttendance>>>
-    export type UpdateAttendanceMutationBody = BodyType<AttendanceUpdate>
-    export type UpdateAttendanceMutationError = ErrorType<unknown>
+    export type UpdateAttendanceMutationBody = AttendanceUpdate
+    export type UpdateAttendanceMutationError = unknown
 
     /**
  * @summary Update attendance record
  */
-export const useUpdateAttendance = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAttendance>>, TError,{id: number;data: BodyType<AttendanceUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useUpdateAttendance = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAttendance>>, TError,{id: number;data: AttendanceUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updateAttendance>>,
         TError,
-        {id: number;data: BodyType<AttendanceUpdate>},
+        {id: number;data: AttendanceUpdate},
         TContext
       > => {
       return useMutation(getUpdateAttendanceMutationOptions(options));
@@ -2027,7 +2026,7 @@ export const getListGradesQueryKey = (params?: ListGradesParams,) => {
     }
 
 
-export const getListGradesQueryOptions = <TData = Awaited<ReturnType<typeof listGrades>>, TError = ErrorType<unknown>>(params?: ListGradesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listGrades>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListGradesQueryOptions = <TData = Awaited<ReturnType<typeof listGrades>>, TError = unknown>(params?: ListGradesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listGrades>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -2046,14 +2045,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ListGradesQueryResult = NonNullable<Awaited<ReturnType<typeof listGrades>>>
-export type ListGradesQueryError = ErrorType<unknown>
+export type ListGradesQueryError = unknown
 
 
 /**
  * @summary List grades
  */
 
-export function useListGrades<TData = Awaited<ReturnType<typeof listGrades>>, TError = ErrorType<unknown>>(
+export function useListGrades<TData = Awaited<ReturnType<typeof listGrades>>, TError = unknown>(
  params?: ListGradesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listGrades>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -2096,9 +2095,9 @@ export const createGrade = async (gradeInput: GradeInput, options?: RequestInit)
 
 
 
-export const getCreateGradeMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createGrade>>, TError,{data: BodyType<GradeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof createGrade>>, TError,{data: BodyType<GradeInput>}, TContext> => {
+export const getCreateGradeMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createGrade>>, TError,{data: GradeInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createGrade>>, TError,{data: GradeInput}, TContext> => {
 
 const mutationKey = ['createGrade'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -2110,7 +2109,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createGrade>>, {data: BodyType<GradeInput>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createGrade>>, {data: GradeInput}> = (props) => {
           const {data} = props ?? {};
 
           return  createGrade(data,requestOptions)
@@ -2124,18 +2123,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type CreateGradeMutationResult = NonNullable<Awaited<ReturnType<typeof createGrade>>>
-    export type CreateGradeMutationBody = BodyType<GradeInput>
-    export type CreateGradeMutationError = ErrorType<unknown>
+    export type CreateGradeMutationBody = GradeInput
+    export type CreateGradeMutationError = unknown
 
     /**
  * @summary Create a grade
  */
-export const useCreateGrade = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createGrade>>, TError,{data: BodyType<GradeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useCreateGrade = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createGrade>>, TError,{data: GradeInput}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createGrade>>,
         TError,
-        {data: BodyType<GradeInput>},
+        {data: GradeInput},
         TContext
       > => {
       return useMutation(getCreateGradeMutationOptions(options));
@@ -2167,9 +2166,9 @@ export const updateGrade = async (id: number,
 
 
 
-export const getUpdateGradeMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateGrade>>, TError,{id: number;data: BodyType<GradeUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof updateGrade>>, TError,{id: number;data: BodyType<GradeUpdate>}, TContext> => {
+export const getUpdateGradeMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateGrade>>, TError,{id: number;data: GradeUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateGrade>>, TError,{id: number;data: GradeUpdate}, TContext> => {
 
 const mutationKey = ['updateGrade'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -2181,7 +2180,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateGrade>>, {id: number;data: BodyType<GradeUpdate>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateGrade>>, {id: number;data: GradeUpdate}> = (props) => {
           const {id,data} = props ?? {};
 
           return  updateGrade(id,data,requestOptions)
@@ -2195,18 +2194,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type UpdateGradeMutationResult = NonNullable<Awaited<ReturnType<typeof updateGrade>>>
-    export type UpdateGradeMutationBody = BodyType<GradeUpdate>
-    export type UpdateGradeMutationError = ErrorType<unknown>
+    export type UpdateGradeMutationBody = GradeUpdate
+    export type UpdateGradeMutationError = unknown
 
     /**
  * @summary Update a grade
  */
-export const useUpdateGrade = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateGrade>>, TError,{id: number;data: BodyType<GradeUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useUpdateGrade = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateGrade>>, TError,{id: number;data: GradeUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updateGrade>>,
         TError,
-        {id: number;data: BodyType<GradeUpdate>},
+        {id: number;data: GradeUpdate},
         TContext
       > => {
       return useMutation(getUpdateGradeMutationOptions(options));
@@ -2237,7 +2236,7 @@ export const deleteGrade = async (id: number, options?: RequestInit): Promise<vo
 
 
 
-export const getDeleteGradeMutationOptions = <TError = ErrorType<unknown>,
+export const getDeleteGradeMutationOptions = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteGrade>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteGrade>>, TError,{id: number}, TContext> => {
 
@@ -2266,12 +2265,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteGradeMutationResult = NonNullable<Awaited<ReturnType<typeof deleteGrade>>>
 
-    export type DeleteGradeMutationError = ErrorType<unknown>
+    export type DeleteGradeMutationError = unknown
 
     /**
  * @summary Delete a grade
  */
-export const useDeleteGrade = <TError = ErrorType<unknown>,
+export const useDeleteGrade = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteGrade>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteGrade>>,
@@ -2315,7 +2314,7 @@ export const getGetDashboardStatsQueryKey = () => {
     }
 
 
-export const getGetDashboardStatsQueryOptions = <TData = Awaited<ReturnType<typeof getDashboardStats>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDashboardStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetDashboardStatsQueryOptions = <TData = Awaited<ReturnType<typeof getDashboardStats>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDashboardStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -2334,14 +2333,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetDashboardStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getDashboardStats>>>
-export type GetDashboardStatsQueryError = ErrorType<unknown>
+export type GetDashboardStatsQueryError = unknown
 
 
 /**
  * @summary Get dashboard statistics
  */
 
-export function useGetDashboardStats<TData = Awaited<ReturnType<typeof getDashboardStats>>, TError = ErrorType<unknown>>(
+export function useGetDashboardStats<TData = Awaited<ReturnType<typeof getDashboardStats>>, TError = unknown>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDashboardStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -2392,7 +2391,7 @@ export const getGetAttendanceSummaryQueryKey = () => {
     }
 
 
-export const getGetAttendanceSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getAttendanceSummary>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAttendanceSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetAttendanceSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getAttendanceSummary>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAttendanceSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -2411,14 +2410,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetAttendanceSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getAttendanceSummary>>>
-export type GetAttendanceSummaryQueryError = ErrorType<unknown>
+export type GetAttendanceSummaryQueryError = unknown
 
 
 /**
  * @summary Get attendance summary by class
  */
 
-export function useGetAttendanceSummary<TData = Awaited<ReturnType<typeof getAttendanceSummary>>, TError = ErrorType<unknown>>(
+export function useGetAttendanceSummary<TData = Awaited<ReturnType<typeof getAttendanceSummary>>, TError = unknown>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAttendanceSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -2469,7 +2468,7 @@ export const getGetGradeDistributionQueryKey = () => {
     }
 
 
-export const getGetGradeDistributionQueryOptions = <TData = Awaited<ReturnType<typeof getGradeDistribution>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGradeDistribution>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetGradeDistributionQueryOptions = <TData = Awaited<ReturnType<typeof getGradeDistribution>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGradeDistribution>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -2488,14 +2487,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetGradeDistributionQueryResult = NonNullable<Awaited<ReturnType<typeof getGradeDistribution>>>
-export type GetGradeDistributionQueryError = ErrorType<unknown>
+export type GetGradeDistributionQueryError = unknown
 
 
 /**
  * @summary Get grade distribution by subject
  */
 
-export function useGetGradeDistribution<TData = Awaited<ReturnType<typeof getGradeDistribution>>, TError = ErrorType<unknown>>(
+export function useGetGradeDistribution<TData = Awaited<ReturnType<typeof getGradeDistribution>>, TError = unknown>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGradeDistribution>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -2546,7 +2545,7 @@ export const getGetRecentActivityQueryKey = () => {
     }
 
 
-export const getGetRecentActivityQueryOptions = <TData = Awaited<ReturnType<typeof getRecentActivity>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRecentActivity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetRecentActivityQueryOptions = <TData = Awaited<ReturnType<typeof getRecentActivity>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRecentActivity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -2565,14 +2564,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetRecentActivityQueryResult = NonNullable<Awaited<ReturnType<typeof getRecentActivity>>>
-export type GetRecentActivityQueryError = ErrorType<unknown>
+export type GetRecentActivityQueryError = unknown
 
 
 /**
  * @summary Get recent activity feed
  */
 
-export function useGetRecentActivity<TData = Awaited<ReturnType<typeof getRecentActivity>>, TError = ErrorType<unknown>>(
+export function useGetRecentActivity<TData = Awaited<ReturnType<typeof getRecentActivity>>, TError = unknown>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRecentActivity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -2623,7 +2622,7 @@ export const getListAcademicYearsQueryKey = () => {
     }
 
 
-export const getListAcademicYearsQueryOptions = <TData = Awaited<ReturnType<typeof listAcademicYears>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAcademicYears>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListAcademicYearsQueryOptions = <TData = Awaited<ReturnType<typeof listAcademicYears>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAcademicYears>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -2642,14 +2641,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ListAcademicYearsQueryResult = NonNullable<Awaited<ReturnType<typeof listAcademicYears>>>
-export type ListAcademicYearsQueryError = ErrorType<unknown>
+export type ListAcademicYearsQueryError = unknown
 
 
 /**
  * @summary List all academic year entities (2020-2100)
  */
 
-export function useListAcademicYears<TData = Awaited<ReturnType<typeof listAcademicYears>>, TError = ErrorType<unknown>>(
+export function useListAcademicYears<TData = Awaited<ReturnType<typeof listAcademicYears>>, TError = unknown>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAcademicYears>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -2700,7 +2699,7 @@ export const getGetCurrentAcademicYearQueryKey = () => {
     }
 
 
-export const getGetCurrentAcademicYearQueryOptions = <TData = Awaited<ReturnType<typeof getCurrentAcademicYear>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentAcademicYear>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetCurrentAcademicYearQueryOptions = <TData = Awaited<ReturnType<typeof getCurrentAcademicYear>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentAcademicYear>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -2719,14 +2718,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetCurrentAcademicYearQueryResult = NonNullable<Awaited<ReturnType<typeof getCurrentAcademicYear>>>
-export type GetCurrentAcademicYearQueryError = ErrorType<unknown>
+export type GetCurrentAcademicYearQueryError = unknown
 
 
 /**
  * @summary Get the school's active academic year
  */
 
-export function useGetCurrentAcademicYear<TData = Awaited<ReturnType<typeof getCurrentAcademicYear>>, TError = ErrorType<unknown>>(
+export function useGetCurrentAcademicYear<TData = Awaited<ReturnType<typeof getCurrentAcademicYear>>, TError = unknown>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentAcademicYear>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -2769,7 +2768,7 @@ export const setCurrentAcademicYear = async (id: number, options?: RequestInit):
 
 
 
-export const getSetCurrentAcademicYearMutationOptions = <TError = ErrorType<unknown>,
+export const getSetCurrentAcademicYearMutationOptions = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCurrentAcademicYear>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof setCurrentAcademicYear>>, TError,{id: number}, TContext> => {
 
@@ -2798,12 +2797,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type SetCurrentAcademicYearMutationResult = NonNullable<Awaited<ReturnType<typeof setCurrentAcademicYear>>>
 
-    export type SetCurrentAcademicYearMutationError = ErrorType<unknown>
+    export type SetCurrentAcademicYearMutationError = unknown
 
     /**
  * @summary Set the school's active academic year (admin only)
  */
-export const useSetCurrentAcademicYear = <TError = ErrorType<unknown>,
+export const useSetCurrentAcademicYear = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCurrentAcademicYear>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof setCurrentAcademicYear>>,
@@ -2847,7 +2846,7 @@ export const getListAnnouncementsQueryKey = () => {
     }
 
 
-export const getListAnnouncementsQueryOptions = <TData = Awaited<ReturnType<typeof listAnnouncements>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAnnouncements>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListAnnouncementsQueryOptions = <TData = Awaited<ReturnType<typeof listAnnouncements>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAnnouncements>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -2866,14 +2865,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ListAnnouncementsQueryResult = NonNullable<Awaited<ReturnType<typeof listAnnouncements>>>
-export type ListAnnouncementsQueryError = ErrorType<unknown>
+export type ListAnnouncementsQueryError = unknown
 
 
 /**
  * @summary List active announcements (all authenticated users)
  */
 
-export function useListAnnouncements<TData = Awaited<ReturnType<typeof listAnnouncements>>, TError = ErrorType<unknown>>(
+export function useListAnnouncements<TData = Awaited<ReturnType<typeof listAnnouncements>>, TError = unknown>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAnnouncements>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -2916,9 +2915,9 @@ export const createAnnouncement = async (announcementInput: AnnouncementInput, o
 
 
 
-export const getCreateAnnouncementMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAnnouncement>>, TError,{data: BodyType<AnnouncementInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof createAnnouncement>>, TError,{data: BodyType<AnnouncementInput>}, TContext> => {
+export const getCreateAnnouncementMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAnnouncement>>, TError,{data: AnnouncementInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAnnouncement>>, TError,{data: AnnouncementInput}, TContext> => {
 
 const mutationKey = ['createAnnouncement'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -2930,7 +2929,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAnnouncement>>, {data: BodyType<AnnouncementInput>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAnnouncement>>, {data: AnnouncementInput}> = (props) => {
           const {data} = props ?? {};
 
           return  createAnnouncement(data,requestOptions)
@@ -2944,18 +2943,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type CreateAnnouncementMutationResult = NonNullable<Awaited<ReturnType<typeof createAnnouncement>>>
-    export type CreateAnnouncementMutationBody = BodyType<AnnouncementInput>
-    export type CreateAnnouncementMutationError = ErrorType<unknown>
+    export type CreateAnnouncementMutationBody = AnnouncementInput
+    export type CreateAnnouncementMutationError = unknown
 
     /**
  * @summary Create an announcement (admin only)
  */
-export const useCreateAnnouncement = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAnnouncement>>, TError,{data: BodyType<AnnouncementInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useCreateAnnouncement = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAnnouncement>>, TError,{data: AnnouncementInput}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createAnnouncement>>,
         TError,
-        {data: BodyType<AnnouncementInput>},
+        {data: AnnouncementInput},
         TContext
       > => {
       return useMutation(getCreateAnnouncementMutationOptions(options));
@@ -2987,9 +2986,9 @@ export const updateAnnouncement = async (id: number,
 
 
 
-export const getUpdateAnnouncementMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAnnouncement>>, TError,{id: number;data: BodyType<AnnouncementUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof updateAnnouncement>>, TError,{id: number;data: BodyType<AnnouncementUpdate>}, TContext> => {
+export const getUpdateAnnouncementMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAnnouncement>>, TError,{id: number;data: AnnouncementUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAnnouncement>>, TError,{id: number;data: AnnouncementUpdate}, TContext> => {
 
 const mutationKey = ['updateAnnouncement'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -3001,7 +3000,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAnnouncement>>, {id: number;data: BodyType<AnnouncementUpdate>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAnnouncement>>, {id: number;data: AnnouncementUpdate}> = (props) => {
           const {id,data} = props ?? {};
 
           return  updateAnnouncement(id,data,requestOptions)
@@ -3015,18 +3014,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type UpdateAnnouncementMutationResult = NonNullable<Awaited<ReturnType<typeof updateAnnouncement>>>
-    export type UpdateAnnouncementMutationBody = BodyType<AnnouncementUpdate>
-    export type UpdateAnnouncementMutationError = ErrorType<unknown>
+    export type UpdateAnnouncementMutationBody = AnnouncementUpdate
+    export type UpdateAnnouncementMutationError = unknown
 
     /**
  * @summary Update an announcement (admin only)
  */
-export const useUpdateAnnouncement = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAnnouncement>>, TError,{id: number;data: BodyType<AnnouncementUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useUpdateAnnouncement = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAnnouncement>>, TError,{id: number;data: AnnouncementUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updateAnnouncement>>,
         TError,
-        {id: number;data: BodyType<AnnouncementUpdate>},
+        {id: number;data: AnnouncementUpdate},
         TContext
       > => {
       return useMutation(getUpdateAnnouncementMutationOptions(options));
@@ -3057,7 +3056,7 @@ export const deleteAnnouncement = async (id: number, options?: RequestInit): Pro
 
 
 
-export const getDeleteAnnouncementMutationOptions = <TError = ErrorType<unknown>,
+export const getDeleteAnnouncementMutationOptions = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAnnouncement>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteAnnouncement>>, TError,{id: number}, TContext> => {
 
@@ -3086,12 +3085,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteAnnouncementMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAnnouncement>>>
 
-    export type DeleteAnnouncementMutationError = ErrorType<unknown>
+    export type DeleteAnnouncementMutationError = unknown
 
     /**
  * @summary Delete an announcement (admin only)
  */
-export const useDeleteAnnouncement = <TError = ErrorType<unknown>,
+export const useDeleteAnnouncement = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAnnouncement>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteAnnouncement>>,
@@ -3135,7 +3134,7 @@ export const getListUsersQueryKey = () => {
     }
 
 
-export const getListUsersQueryOptions = <TData = Awaited<ReturnType<typeof listUsers>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListUsersQueryOptions = <TData = Awaited<ReturnType<typeof listUsers>>, TError = void>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -3154,14 +3153,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ListUsersQueryResult = NonNullable<Awaited<ReturnType<typeof listUsers>>>
-export type ListUsersQueryError = ErrorType<void>
+export type ListUsersQueryError = void
 
 
 /**
  * @summary List all system user accounts (admin only)
  */
 
-export function useListUsers<TData = Awaited<ReturnType<typeof listUsers>>, TError = ErrorType<void>>(
+export function useListUsers<TData = Awaited<ReturnType<typeof listUsers>>, TError = void>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -3204,9 +3203,9 @@ export const createUser = async (userInput: UserInput, options?: RequestInit): P
 
 
 
-export const getCreateUserMutationOptions = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createUser>>, TError,{data: BodyType<UserInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof createUser>>, TError,{data: BodyType<UserInput>}, TContext> => {
+export const getCreateUserMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createUser>>, TError,{data: UserInput}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createUser>>, TError,{data: UserInput}, TContext> => {
 
 const mutationKey = ['createUser'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -3218,7 +3217,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createUser>>, {data: BodyType<UserInput>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createUser>>, {data: UserInput}> = (props) => {
           const {data} = props ?? {};
 
           return  createUser(data,requestOptions)
@@ -3232,18 +3231,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type CreateUserMutationResult = NonNullable<Awaited<ReturnType<typeof createUser>>>
-    export type CreateUserMutationBody = BodyType<UserInput>
-    export type CreateUserMutationError = ErrorType<void>
+    export type CreateUserMutationBody = UserInput
+    export type CreateUserMutationError = void
 
     /**
  * @summary Create a new user account (admin only)
  */
-export const useCreateUser = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createUser>>, TError,{data: BodyType<UserInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useCreateUser = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createUser>>, TError,{data: UserInput}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createUser>>,
         TError,
-        {data: BodyType<UserInput>},
+        {data: UserInput},
         TContext
       > => {
       return useMutation(getCreateUserMutationOptions(options));
@@ -3275,9 +3274,9 @@ export const updateUser = async (id: number,
 
 
 
-export const getUpdateUserMutationOptions = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUser>>, TError,{id: number;data: BodyType<UserUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof updateUser>>, TError,{id: number;data: BodyType<UserUpdate>}, TContext> => {
+export const getUpdateUserMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUser>>, TError,{id: number;data: UserUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateUser>>, TError,{id: number;data: UserUpdate}, TContext> => {
 
 const mutationKey = ['updateUser'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -3289,7 +3288,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateUser>>, {id: number;data: BodyType<UserUpdate>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateUser>>, {id: number;data: UserUpdate}> = (props) => {
           const {id,data} = props ?? {};
 
           return  updateUser(id,data,requestOptions)
@@ -3303,18 +3302,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type UpdateUserMutationResult = NonNullable<Awaited<ReturnType<typeof updateUser>>>
-    export type UpdateUserMutationBody = BodyType<UserUpdate>
-    export type UpdateUserMutationError = ErrorType<void>
+    export type UpdateUserMutationBody = UserUpdate
+    export type UpdateUserMutationError = void
 
     /**
  * @summary Update a user account (admin only)
  */
-export const useUpdateUser = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUser>>, TError,{id: number;data: BodyType<UserUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useUpdateUser = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUser>>, TError,{id: number;data: UserUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updateUser>>,
         TError,
-        {id: number;data: BodyType<UserUpdate>},
+        {id: number;data: UserUpdate},
         TContext
       > => {
       return useMutation(getUpdateUserMutationOptions(options));
@@ -3345,7 +3344,7 @@ export const deleteUser = async (id: number, options?: RequestInit): Promise<voi
 
 
 
-export const getDeleteUserMutationOptions = <TError = ErrorType<void>,
+export const getDeleteUserMutationOptions = <TError = void,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteUser>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteUser>>, TError,{id: number}, TContext> => {
 
@@ -3374,12 +3373,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteUserMutationResult = NonNullable<Awaited<ReturnType<typeof deleteUser>>>
 
-    export type DeleteUserMutationError = ErrorType<void>
+    export type DeleteUserMutationError = void
 
     /**
  * @summary Delete a user account (admin only)
  */
-export const useDeleteUser = <TError = ErrorType<void>,
+export const useDeleteUser = <TError = void,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteUser>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteUser>>,
