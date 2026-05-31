@@ -1,2 +1,3 @@
-let _baseUrl: string | null = "https://school-system1-4.onrender.com";
-let _authTokenGetter: AuthTokenGetter | null = null;
+git add .
+git commit -m "Fix: Add customFetch and RequestConfig for Orval"
+git push origin main
