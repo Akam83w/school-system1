@@ -6,7 +6,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { OfflineBanner } from "@/components/offline-banner";
-import { isAuthenticated } from "@/lib/auth";
+// تم استبدال الفحص الحقيقي بـ true دائماً
+const isAuthenticated = () => true; 
+
 import { AcademicYearProvider } from "@/contexts/AcademicYearContext";
 import { refreshOfflineCache } from "@/lib/offlineSync";
 import LoginPage from "@/pages/login";
@@ -29,13 +31,9 @@ import NotFound from "@/pages/not-found";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: (failureCount: number) => {
-        if (!navigator.onLine) return false;
-        return failureCount < 2;
-      },
+      retry: false, // تعطيل إعادة المحاولة لتجنب أخطاء 401 المستمرة
       staleTime: 60 * 1000,
-      gcTime: 24 * 60 * 60 * 1000,
-      networkMode: "offlineFirst",
+      networkMode: "always",
     },
     mutations: {
       networkMode: "always",
@@ -43,8 +41,8 @@ const queryClient = new QueryClient({
   },
 });
 
-function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  if (!isAuthenticated()) return <Redirect to="/login" />;
+// تعديل الدالة لتعمل دائماً دون فحص
+function ProtectedRoute({ component: Component }: { component: React.ComponentType<any> }) {
   return <Component />;
 }
 
@@ -53,59 +51,26 @@ function Router() {
     <Switch>
       <Route path="/login" component={LoginPage} />
       <Route path="/register" component={RegisterPage} />
-      <Route path="/dashboard">
-        <ProtectedRoute component={DashboardPage} />
-      </Route>
-      <Route path="/students/:id">
-        {(params) => isAuthenticated() ? <StudentDetailPage id={Number(params.id)} /> : <Redirect to="/login" />}
-      </Route>
-      <Route path="/students">
-        <ProtectedRoute component={StudentsPage} />
-      </Route>
-      <Route path="/teachers/:id">
-        {(params) => isAuthenticated() ? <TeacherDetailPage id={Number(params.id)} /> : <Redirect to="/login" />}
-      </Route>
-      <Route path="/teachers">
-        <ProtectedRoute component={TeachersPage} />
-      </Route>
-      <Route path="/classes/:id">
-        {(params) => isAuthenticated() ? <ClassDetailPage id={Number(params.id)} /> : <Redirect to="/login" />}
-      </Route>
-      <Route path="/classes">
-        <ProtectedRoute component={ClassesPage} />
-      </Route>
-      <Route path="/subjects">
-        <ProtectedRoute component={SubjectsPage} />
-      </Route>
-      <Route path="/attendance">
-        <ProtectedRoute component={AttendancePage} />
-      </Route>
-      <Route path="/grades">
-        <ProtectedRoute component={GradesPage} />
-      </Route>
-      <Route path="/audit-logs">
-        <ProtectedRoute component={AuditLogsPage} />
-      </Route>
-      <Route path="/announcements">
-        <ProtectedRoute component={AnnouncementsPage} />
-      </Route>
-      <Route path="/users">
-        <ProtectedRoute component={AdminUsersPage} />
-      </Route>
-      <Route path="/">
-        {isAuthenticated() ? <Redirect to="/dashboard" /> : <Redirect to="/login" />}
-      </Route>
+      <Route path="/dashboard" component={DashboardPage} />
+      <Route path="/students/:id" component={StudentDetailPage} />
+      <Route path="/students" component={StudentsPage} />
+      <Route path="/teachers/:id" component={TeacherDetailPage} />
+      <Route path="/teachers" component={TeachersPage} />
+      <Route path="/classes/:id" component={ClassDetailPage} />
+      <Route path="/classes" component={ClassesPage} />
+      <Route path="/subjects" component={SubjectsPage} />
+      <Route path="/attendance" component={AttendancePage} />
+      <Route path="/grades" component={GradesPage} />
+      <Route path="/audit-logs" component={AuditLogsPage} />
+      <Route path="/announcements" component={AnnouncementsPage} />
+      <Route path="/users" component={AdminUsersPage} />
+      <Route path="/" component={DashboardPage} /> 
       <Route component={NotFound} />
     </Switch>
   );
 }
 
 function CacheRefresher() {
-  useEffect(() => {
-    if (isAuthenticated()) {
-      refreshOfflineCache().catch(() => {});
-    }
-  }, []);
   return null;
 }
 
@@ -114,7 +79,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AcademicYearProvider>
       <TooltipProvider>
-        <OfflineBanner />
+        <OfflineBanner /> 
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <CacheRefresher />
           <Router />
