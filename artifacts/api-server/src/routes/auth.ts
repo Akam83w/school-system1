@@ -9,26 +9,35 @@ import { logger } from "../lib/logger";
 const router = Router();
 
 // =====================================================
-// SECRET
+// SECRET - REQUIRED
 // =====================================================
-const DEFAULT_SECRET = "my_super_secret_key_12345";
-const SECRET = process.env.SESSION_SECRET || DEFAULT_SECRET;
+const SESSION_SECRET = process.env.SESSION_SECRET;
 
-if (!process.env.SESSION_SECRET) {
-  logger.warn("SESSION_SECRET غير موجود - سيتم استخدام default secret");
+if (!SESSION_SECRET) {
+  logger.error("❌ CRITICAL ERROR: SESSION_SECRET is not set in environment variables!");
+  logger.error("Please set SESSION_SECRET in your .env file");
+  logger.error("Generate one with: openssl rand -base64 32");
+  process.exit(1);
 }
 
+const SECRET = SESSION_SECRET;
+logger.info("✅ SESSION_SECRET loaded successfully from environment");
+
 // =====================================================
-// PASSWORD (BYPASSED)
+// PASSWORD - PROPER VERIFICATION
 // =====================================================
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
 }
 
-async function verifyPassword(password: string, hash: string) {
-  // تم تجاوز التشفير للسماح بالدخول للمشروع
-  console.log("[DEBUG] Bypass: Allowing access for user");
-  return true; 
+async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  try {
+    const valid = await bcrypt.compare(password, hash);
+    return valid;
+  } catch (err) {
+    logger.warn({ err }, "Password verification failed");
+    return false;
+  }
 }
 
 // =====================================================
@@ -61,7 +70,7 @@ export function verifyToken(token: string) {
 }
 
 // =====================================================
-// LOGIN
+// LOGIN ENDPOINT
 // =====================================================
 router.post("/auth/login", async (req: any, res: any) => {
   try {
@@ -81,6 +90,7 @@ router.post("/auth/login", async (req: any, res: any) => {
       return res.status(401).json({ error: "خطأ في البيانات" });
     }
 
+    // ✅ PROPER PASSWORD VERIFICATION
     const valid = await verifyPassword(password, admin.passwordHash);
 
     if (!valid) {
@@ -91,8 +101,14 @@ router.post("/auth/login", async (req: any, res: any) => {
 
     return res.json({
       token,
-      role: admin.role,
-      name: admin.name,
+      admin: {
+        id: admin.id,
+        username: admin.username,
+        name: admin.name,
+        role: admin.role,
+        phone: admin.phone,
+        linkedId: admin.linkedId,
+      },
     });
   } catch (err) {
     logger.error({ err }, "Login error");
@@ -101,7 +117,7 @@ router.post("/auth/login", async (req: any, res: any) => {
 });
 
 // =====================================================
-// ME
+// GET ME ENDPOINT
 // =====================================================
 router.get("/auth/me", async (req: any, res: any) => {
   try {
@@ -132,6 +148,8 @@ router.get("/auth/me", async (req: any, res: any) => {
       name: admin.name,
       role: admin.role,
       username: admin.username,
+      phone: admin.phone,
+      linkedId: admin.linkedId,
     });
   } catch (err) {
     logger.error({ err }, "ME error");
