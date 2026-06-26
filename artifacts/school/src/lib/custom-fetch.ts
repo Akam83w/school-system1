@@ -1,4 +1,4 @@
-let _baseUrl = "http://localhost:3000";
+let _baseUrl = "http://localhost:5173";
 
 export const customFetch = async (config: any) => {
   const token = localStorage.getItem("school_token");

@@ -10,7 +10,7 @@ import { logger } from "./logger";
 export function setupApiClient(): void {
   try {
     // تم ضبط العنوان ليوجه الطلبات مباشرة إلى السيرفر الخاص بك
-    const baseUrl = "http://localhost:3000"; 
+    const baseUrl = "http://localhost:5173"; 
 
     // Set the base URL for all API calls
     setBaseUrl(baseUrl);
@@ -36,7 +36,7 @@ export function setupApiClient(): void {
  */
 export function validateApiClientSetup(): void {
   // تم ضبط الـ baseUrl يدوياً للتحقق
-  const baseUrl = "http://localhost:3000";
+  const baseUrl = "http://localhost:5173";
 
   if (!baseUrl) {
     console.error("[API] Base URL not configured");
