@@ -11,7 +11,7 @@
 Add to Render dashboard (Settings → Environment Variables):
 
 ```
-DATABASE_URL=postgresql://school_db_4mpz_user:xO9dWBIs6an5y6ePE8Zlj7SUJi7rGnqM@dpg-d86ucb67r5hc73cjuh6g-a.virginia-postgres.render.com/school_db_4mpz
+DATABASE_URL=postgresql://<DB_USER>:<DB_PASSWORD>@<DB_HOST>/<DB_NAME>
 ```
 
 ⚠️ **CRITICAL**: This must be added as a **service variable** (not a secret), with scope set to **"run"** so it's available during both build and runtime.
@@ -62,7 +62,7 @@ File: `artifacts/api-server/src/seed.ts`
 Go to Render dashboard → Your Web Service → Environment
 
 ```
-DATABASE_URL = postgresql://school_db_4mpz_user:xO9dWBIs6an5y6ePE8Zlj7SUJi7rGnqM@dpg-d86ucb67r5hc73cjuh6g-a.virginia-postgres.render.com/school_db_4mpz
+DATABASE_URL = postgresql://<DB_USER>:<DB_PASSWORD>@<DB_HOST>/<DB_NAME>
 ```
 
 **Check the box:** "Run service variable" (not just during build)
@@ -122,7 +122,7 @@ cat > .env << 'EOF'
 PORT=8080
 BASE_PATH=/
 NODE_ENV=development
-DATABASE_URL=postgresql://school_db_4mpz_user:xO9dWBIs6an5y6ePE8Zlj7SUJi7rGnqM@dpg-d86ucb67r5hc73cjuh6g-a.virginia-postgres.render.com/school_db_4mpz
+DATABASE_URL=postgresql://<DB_USER>:<DB_PASSWORD>@<DB_HOST>/<DB_NAME>
 EOF
 
 # 2. Install dependencies
@@ -197,7 +197,7 @@ After deployment, verify:
 
 ```bash
 # 1. Check if tables exist (psql from your local machine)
-psql "postgresql://school_db_4mpz_user:xO9dWBIs6an5y6ePE8Zlj7SUJi7rGnqM@dpg-d86ucb67r5hc73cjuh6g-a.virginia-postgres.render.com/school_db_4mpz"
+psql "postgresql://<DB_USER>:<DB_PASSWORD>@<DB_HOST>/<DB_NAME>"
 
 # 2. List all tables
 \dt
