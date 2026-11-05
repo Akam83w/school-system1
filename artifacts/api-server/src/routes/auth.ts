@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { adminsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { createHmac } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 import bcrypt from "bcryptjs";
 import { logger } from "../lib/logger";
 
@@ -45,7 +45,7 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
 // =====================================================
 function generateToken(adminId: number) {
   const payload = Buffer.from(
-    JSON.stringify({ adminId, ts: Date.now() })
+    JSON.stringify({ adminId, ts: Date.now(), exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60 })
   ).toString("base64");
 
   const sig = createHmac("sha256", SECRET)
@@ -62,8 +62,12 @@ export function verifyToken(token: string) {
       .update(payload)
       .digest("hex");
 
-    if (sig !== expected) return null;
-    return JSON.parse(Buffer.from(payload, "base64").toString());
+    const supplied = Buffer.from(sig, "hex");
+    const calculated = Buffer.from(expected, "hex");
+    if (supplied.length !== calculated.length || !timingSafeEqual(supplied, calculated)) return null;
+    const decoded = JSON.parse(Buffer.from(payload, "base64").toString());
+    if (!decoded?.adminId || !decoded?.exp || decoded.exp < Math.floor(Date.now() / 1000)) return null;
+    return decoded;
   } catch {
     return null;
   }
