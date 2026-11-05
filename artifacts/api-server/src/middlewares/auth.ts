@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { logger } from "../lib/logger";
+import { db, adminsTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
+import { verifyToken } from "../routes/auth";
 
 export interface AuthUser {
   id: number;
@@ -9,48 +11,48 @@ export interface AuthUser {
   linkedId: number | null;
 }
 
-/**
- * Global authentication middleware - BYPASSED FOR DEVELOPMENT
- * Injects a mock admin user to avoid 401 Unauthorized errors
- */
-export async function requireAuth(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  // تجاوز التحقق تماماً وحقن مستخدم وهمي بصلاحيات مدير
-  (req as any).user = {
-    id: 1,
-    name: "Admin Developer",
-    phone: "0000000000",
-    role: "admin",
-    linkedId: null,
-  } satisfies AuthUser;
+export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const authorization = req.headers.authorization;
+    if (!authorization?.startsWith("Bearer ")) {
+      res.status(401).json({ error: "غير مصرح: سجل الدخول أولاً" });
+      return;
+    }
+    const decoded = verifyToken(authorization.slice(7));
+    if (!decoded?.adminId) {
+      res.status(401).json({ error: "انتهت الجلسة أو رمز الدخول غير صالح" });
+      return;
+    }
+    const [admin] = await db.select().from(adminsTable)
+      .where(eq(adminsTable.id, Number(decoded.adminId))).limit(1);
+    if (!admin) {
+      res.status(401).json({ error: "الحساب غير موجود أو تم تعطيله" });
+      return;
+    }
+    (req as any).user = {
+      id: admin.id, name: admin.name, phone: admin.phone ?? "",
+      role: admin.role, linkedId: admin.linkedId ?? null,
+    } satisfies AuthUser;
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
 
-  logger.debug({ path: req.path }, "Authentication bypassed (Development Mode)");
+export function requireAdmin(req: Request, res: Response, next: NextFunction): void {
+  const user = (req as any).user as AuthUser | undefined;
+  if (!user || !["admin", "super_admin"].includes(user.role)) {
+    res.status(403).json({ error: "هذه الصلاحية للمدير فقط" });
+    return;
+  }
   next();
 }
 
-/**
- * Authorization middleware - Always allows access in development
- */
-export function requireAdmin(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
-  // السماح بالوصول دائماً
-  next();
-}
-
-/**
- * Authorization middleware - Always allows access in development
- */
-export function requireTeacherOrAdmin(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
-  // السماح بالوصول دائماً
+export function requireTeacherOrAdmin(req: Request, res: Response, next: NextFunction): void {
+  const user = (req as any).user as AuthUser | undefined;
+  if (!user || !["teacher", "admin", "super_admin"].includes(user.role)) {
+    res.status(403).json({ error: "ليس لديك صلاحية الوصول" });
+    return;
+  }
   next();
 }
