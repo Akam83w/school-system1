@@ -1,10 +1,12 @@
 import express, { type Express, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
+import path from "node:path";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
 const app: Express = express();
+const frontendDist = path.resolve(process.cwd(), "artifacts/school/dist");
 
 /* =========================
    LOGGING MIDDLEWARE
@@ -40,6 +42,21 @@ app.use(express.urlencoded({ extended: true }));
    API ROUTES
    ========================= */
 app.use("/api", router);
+
+/* =========================
+   FRONTEND STATIC FILES + SPA FALLBACK
+   Keep this before the 404 handler so the web app can load.
+   ========================= */
+app.use(express.static(frontendDist));
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.method !== "GET" || req.path.startsWith("/api")) {
+    return next();
+  }
+
+  res.sendFile(path.join(frontendDist, "index.html"), (err) => {
+    if (err) next();
+  });
+});
 
 /* =========================
    ERROR HANDLING MIDDLEWARE
