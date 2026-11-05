@@ -1,16 +1,13 @@
 import "./lib/auth";
-import { useEffect } from "react";
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { OfflineBanner } from "@/components/offline-banner";
-// تم استبدال الفحص الحقيقي بـ true دائماً
-const isAuthenticated = () => true; 
+import { isAuthenticated } from "@/lib/auth";
 
 import { AcademicYearProvider } from "@/contexts/AcademicYearContext";
-import { refreshOfflineCache } from "@/lib/offlineSync";
 import LoginPage from "@/pages/login";
 import RegisterPage from "@/pages/register";
 import AuditLogsPage from "@/pages/audit-logs";
@@ -31,7 +28,7 @@ import NotFound from "@/pages/not-found";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: false, // تعطيل إعادة المحاولة لتجنب أخطاء 401 المستمرة
+      retry: false,
       staleTime: 60 * 1000,
       networkMode: "always",
     },
@@ -41,15 +38,24 @@ const queryClient = new QueryClient({
   },
 });
 
-// تعديل الدالة لتعمل دائماً دون فحص
-function ProtectedRoute({ component: Component }: { component: React.ComponentType<any> }) {
-  return <Component />;
-}
-
 function Router() {
+  if (!isAuthenticated()) {
+    return (
+      <Switch>
+        <Route path="/login" component={LoginPage} />
+        <Route path="/register" component={RegisterPage} />
+        <Route>
+          <Redirect to="/login" />
+        </Route>
+      </Switch>
+    );
+  }
+
   return (
     <Switch>
-      <Route path="/login" component={LoginPage} />
+      <Route path="/login">
+        <Redirect to="/dashboard" />
+      </Route>
       <Route path="/register" component={RegisterPage} />
       <Route path="/dashboard" component={DashboardPage} />
       <Route path="/students/:id" component={StudentDetailPage} />
@@ -64,29 +70,24 @@ function Router() {
       <Route path="/audit-logs" component={AuditLogsPage} />
       <Route path="/announcements" component={AnnouncementsPage} />
       <Route path="/users" component={AdminUsersPage} />
-      <Route path="/" component={DashboardPage} /> 
+      <Route path="/" component={DashboardPage} />
       <Route component={NotFound} />
     </Switch>
   );
-}
-
-function CacheRefresher() {
-  return null;
 }
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AcademicYearProvider>
-      <TooltipProvider>
-        <OfflineBanner /> 
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <CacheRefresher />
-          <Router />
-        </WouterRouter>
-        <Toaster />
-        <PwaInstallPrompt />
-      </TooltipProvider>
+        <TooltipProvider>
+          <OfflineBanner />
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+          <Toaster />
+          <PwaInstallPrompt />
+        </TooltipProvider>
       </AcademicYearProvider>
     </QueryClientProvider>
   );
