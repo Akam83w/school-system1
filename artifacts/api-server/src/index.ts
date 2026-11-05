@@ -74,14 +74,11 @@ async function startServer() {
     await seedDatabase();
     logger.info("✓ Database initialization complete");
   } catch (err) {
-    logger.error(
+    logger.fatal(
       { err },
-      "⚠ Database seed encountered an error. " +
-        "This may indicate a connection issue or missing schema. " +
-        "Server will still start, but some data may be missing. " +
-        "Please review the logs and consider running: pnpm db:push"
+      "✗ Database initialization failed. Refusing to start an unhealthy application."
     );
-    // Non-blocking: server continues but logs issue clearly
+    process.exit(1);
   }
 
   app.listen(port, (err) => {
