@@ -6,5 +6,6 @@ RUN pnpm install --frozen-lockfile
 RUN pnpm build
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV NODE_OPTIONS=--max-old-space-size=256
 EXPOSE 3000
-CMD ["pnpm", "start"]
+CMD ["node", "--enable-source-maps", "artifacts/api-server/dist/index.mjs"]
