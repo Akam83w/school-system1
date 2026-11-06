@@ -9,7 +9,7 @@ const router = Router();
 async function getNextCode(schoolId: number) {
   const all = await db.select({ code: teachersTable.teacherCode }).from(teachersTable).where(eq(teachersTable.schoolId, schoolId));
   const nums = all.map(t => parseInt(t.code.replace("TCH", ""))).filter(n => !isNaN(n));
-  return `TCH${(nums.length ? Math.max(...nums) : 100) + 1}`;
+  return `TCH${schoolId}-${(nums.length ? Math.max(...nums) : 100) + 1}`;
 }
 router.get("/teachers", requireAuth, async (req, res) => {
   const user = (req as any).user as AuthUser;
