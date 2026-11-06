@@ -1,8 +1,9 @@
 import { pgTable, text, serial, timestamp, boolean, integer } from "drizzle-orm/pg-core";
+import { schoolsTable } from "./schools";
 
 export const announcementsTable = pgTable("announcements", {
   id: serial("id").primaryKey(),
-  schoolId: integer("school_id").notNull(),
+  schoolId: integer("school_id").notNull().references(() => schoolsTable.id, { onDelete: "restrict" }),
   title: text("title").notNull(),
   body: text("body").notNull(),
   type: text("type").notNull().default("info"),
