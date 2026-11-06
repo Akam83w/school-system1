@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { adminsTable } from "@workspace/db";
+import { adminsTable, teachersTable, studentsTable } from "@workspace/db";
 import { eq, count } from "drizzle-orm";
 import { createHmac, timingSafeEqual } from "crypto";
 import bcrypt from "bcryptjs";
@@ -82,37 +82,51 @@ export function verifyToken(token: string) {
 // =====================================================
 router.post("/auth/login", async (req: any, res: any) => {
   try {
-    const { username, identifier, password } = req.body ?? {};
+    const { username, identifier, password, role } = req.body ?? {};
     const user = (username || identifier || "").toString().trim();
+    const requestedRole = (role || "admin").toString().trim().toLowerCase();
 
-    if (!user || !password) {
-      return res.status(400).json({ error: "بيانات ناقصة: أدخل اسم المستخدم وكلمة المرور" });
+    if (!user || typeof password !== "string" || !password) {
+      return res.status(400).json({ error: "أدخل اسم المستخدم وكلمة المرور" });
+    }
+    if (!["admin", "teacher", "student"].includes(requestedRole)) {
+      return res.status(400).json({ error: "نوع الحساب غير صالح" });
     }
 
-    const [admin] = await db
-      .select()
-      .from(adminsTable)
-      .where(eq(adminsTable.username, user))
-      .limit(1);
+    let admin: any;
+
+    if (requestedRole === "admin") {
+      [admin] = await db.select().from(adminsTable)
+        .where(eq(adminsTable.username, user)).limit(1);
+      if (admin && !["admin", "super_admin"].includes(admin.role)) admin = undefined;
+    } else if (requestedRole === "teacher") {
+      const [teacher] = await db.select({ id: teachersTable.id })
+        .from(teachersTable).where(eq(teachersTable.teacherCode, user)).limit(1);
+      if (teacher) {
+        [admin] = await db.select().from(adminsTable)
+          .where(eq(adminsTable.linkedId, teacher.id)).limit(1);
+        if (admin && admin.role !== "teacher") admin = undefined;
+      }
+    } else {
+      const [student] = await db.select({ id: studentsTable.id })
+        .from(studentsTable).where(eq(studentsTable.nationalId, user)).limit(1);
+      if (student) {
+        [admin] = await db.select().from(adminsTable)
+          .where(eq(adminsTable.linkedId, student.id)).limit(1);
+        if (admin && admin.role !== "student") admin = undefined;
+      }
+    }
 
     if (!admin) {
-      logger.warn({ user }, "Login failed: user not found");
-      return res.status(401).json({ error: "اسم المستخدم أو كلمة المرور غير صحيحة" });
+      logger.warn({ role: requestedRole }, "Login failed: account or linked profile not found");
+      return res.status(401).json({ error: "الحساب غير موجود أو غير مرتبط بملفك. راجع مدير المدرسة" });
     }
-
-    if (!admin.passwordHash) {
-      logger.error({ userId: admin.id }, "Login failed: missing password hash");
-      return res.status(401).json({ error: "اسم المستخدم أو كلمة المرور غير صحيحة" });
-    }
-
-    const valid = await verifyPassword(String(password), admin.passwordHash);
-    if (!valid) {
-      logger.warn({ userId: admin.id }, "Login failed: invalid password");
-      return res.status(401).json({ error: "اسم المستخدم أو كلمة المرور غير صحيحة" });
+    if (!admin.passwordHash || !(await verifyPassword(password, admin.passwordHash))) {
+      logger.warn({ userId: admin.id, role: requestedRole }, "Login failed: invalid password");
+      return res.status(401).json({ error: "كلمة المرور غير صحيحة" });
     }
 
     const token = generateToken(admin.id);
-
     return res.json({
       token,
       admin: {
@@ -126,7 +140,7 @@ router.post("/auth/login", async (req: any, res: any) => {
     });
   } catch (err) {
     logger.error({ err }, "Login error");
-    return res.status(500).json({ error: "خطأ في الخادم أثناء تسجيل الدخول" });
+    return res.status(500).json({ error: "تعذر إكمال تسجيل الدخول بسبب خطأ في الخادم" });
   }
 });
 
