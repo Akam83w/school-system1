@@ -1,9 +1,10 @@
 import { pgTable, serial, integer, text, jsonb, timestamp } from "drizzle-orm/pg-core";
 import { adminsTable } from "./admins";
+import { schoolsTable } from "./schools";
 
 export const auditLogsTable = pgTable("audit_logs", {
   id: serial("id").primaryKey(),
-  schoolId: integer("school_id").notNull(),
+  schoolId: integer("school_id").notNull().references(() => schoolsTable.id, { onDelete: "restrict" }),
   userId: integer("user_id").references(() => adminsTable.id, { onDelete: "set null" }),
   userName: text("user_name").notNull().default(""),
   userPhone: text("user_phone").notNull().default(""),
