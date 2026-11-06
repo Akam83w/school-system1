@@ -79,9 +79,9 @@ export default function ClassesPage() {
   const schoolType = (me as any)?.schoolType as string | undefined;
   const schoolStage: Stage | null = schoolType === "primary" ? "ابتدائي" : schoolType === "intermediate" ? "متوسط" : schoolType === "preparatory" ? "إعدادي" : null;
   const visibleStages = meLoading ? [] : schoolStage ? [schoolStage] : STAGES;
-  const pageLoading = isLoading || meLoading;
 
   const { data: classes, isLoading } = useListClasses();
+  const pageLoading = isLoading || meLoading;
   const { data: teachers } = useListTeachers();
 
   const createMutation = useCreateClass({
