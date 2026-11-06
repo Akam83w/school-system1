@@ -304,7 +304,7 @@ export default function GradesPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/10">
-                      {["الطالب", "المادة", "الصف", "الدرجة", "النسبة", "نوع الامتحان", "التاريخ", ...(isAdmin ? ["تعديل", "حذف"] : [])].map((h) => (
+                      {["الطالب", "المادة", "الصف", "الدرجة", "النسبة", "نوع الامتحان", "التاريخ", ...(isAdmin ? ["الإجراءات"] : [])].map((h) => (
                         <th key={h} className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{h}</th>
                       ))}
                     </tr>
