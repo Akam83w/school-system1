@@ -4,200 +4,103 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function RegisterPage() {
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPass, setShowPass] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
   const [form, setForm] = useState({
-    name: "",
-    username: "",
-    phone: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
+    schoolName: "", schoolType: "primary", name: "", username: "",
+    phone: "", email: "", password: "", confirmPassword: "",
   });
-  const [nameError, setNameError] = useState("");
-
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-    if (name === "name") {
-      const parts = value.trim().split(/\s+/).filter(Boolean);
-      setNameError(parts.length >= 3 || value === "" ? "" : "يجب أن يتكون الاسم من ثلاثة أسماء على الأقل");
-    }
+  const input = "w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm";
+  function change(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+    setForm(p => ({ ...p, [e.target.name]: e.target.value }));
   }
-
-  async function handleSubmit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const nameParts = form.name.trim().split(/\s+/).filter(Boolean);
-    if (nameParts.length < 3) {
-      toast({ title: "الاسم غير مكتمل", description: "يجب أن يتكون الاسم الكامل من ثلاثة أسماء على الأقل", variant: "destructive" });
-      return;
+    if (form.name.trim().split(/\s+/).filter(Boolean).length < 3) {
+      toast({ title: "الاسم غير مكتمل", description: "أدخل اسم المدير الثلاثي على الأقل", variant: "destructive" }); return;
+    }
+    if (form.password.length < 8) {
+      toast({ title: "كلمة المرور قصيرة", description: "استخدم 8 أحرف على الأقل", variant: "destructive" }); return;
     }
     if (form.password !== form.confirmPassword) {
-      toast({ title: "خطأ في التحقق", description: "كلمة المرور وتأكيدها غير متطابقتين", variant: "destructive" });
-      return;
+      toast({ title: "تأكيد كلمة المرور", description: "كلمتا المرور غير متطابقتين", variant: "destructive" }); return;
     }
-    if (form.password.length < 6) {
-      toast({ title: "كلمة المرور قصيرة", description: "يجب أن تكون كلمة المرور 6 أحرف على الأقل", variant: "destructive" });
-      return;
-    }
-    setIsLoading(true);
+    setLoading(true);
     try {
       const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-      const res = await fetch(`${base}/api/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch(`${base}/api/auth/register-school`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: form.name.trim(),
-          username: form.username.trim(),
-          phone: form.phone.trim(),
-          email: form.email.trim() || undefined,
+          schoolName: form.schoolName.trim(), schoolType: form.schoolType,
+          name: form.name.trim(), username: form.username.trim(),
+          phone: form.phone.trim(), email: form.email.trim() || undefined,
           password: form.password,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        if (res.status === 403) {
-          toast({
-            title: "التسجيل محظور",
-            description: "يتم إنشاء الحسابات الجديدة من قِبَل مدير النظام فقط.",
-            variant: "destructive",
-          });
-        } else {
-          toast({ title: "فشل إنشاء الحساب", description: data.error ?? "حدث خطأ غير متوقع", variant: "destructive" });
-        }
-        return;
+      const data = await response.json();
+      if (!response.ok) {
+        toast({ title: "تعذر تسجيل المدرسة", description: data.error || "حدث خطأ غير متوقع", variant: "destructive" }); return;
       }
       setRegistered(true);
+      toast({ title: "تم تسجيل المدرسة", description: "تم إنشاء حساب المدير بنجاح. يمكنك تسجيل الدخول الآن." });
     } catch {
-      toast({ title: "خطأ في الاتصال", description: "تعذّر الاتصال بالخادم", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
+      toast({ title: "خطأ في الاتصال", description: "تعذر الاتصال بالخادم", variant: "destructive" });
+    } finally { setLoading(false); }
   }
 
-  const passwordMismatch = form.password && form.confirmPassword && form.password !== form.confirmPassword;
-  const inputCls = "w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-sm";
-
-  if (registered) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
-        <div className="text-center max-w-sm">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center mx-auto mb-4">
-            <svg viewBox="0 0 24 24" className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" strokeWidth={2}>
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-black text-foreground mb-2">تم إنشاء حساب المدير</h2>
-          <p className="text-muted-foreground text-sm mb-6">يمكنك الآن تسجيل الدخول وإدارة حسابات المعلمين والطلاب.</p>
-          <Link href="/login">
-            <button className="px-6 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-md shadow-primary/20">
-              تسجيل الدخول
-            </button>
-          </Link>
-        </div>
+  if (registered) return (
+    <div className="min-h-screen flex items-center justify-center p-4" dir="rtl">
+      <div className="max-w-md text-center bg-white rounded-2xl border p-8 shadow-xl">
+        <div className="text-4xl mb-3">✓</div>
+        <h1 className="text-xl font-black mb-2">تم تسجيل المدرسة بنجاح</h1>
+        <p className="text-sm text-muted-foreground mb-6">أصبح بإمكان مدير المدرسة تسجيل الدخول وإضافة المعلمين والطلاب.</p>
+        <Link href="/login" className="inline-block px-6 py-3 rounded-xl bg-primary text-white font-bold">الانتقال لتسجيل الدخول</Link>
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
-      <div className="w-full max-w-lg">
+      <div className="w-full max-w-xl bg-white rounded-2xl shadow-xl border border-border p-6 sm:p-8">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary text-white text-2xl font-bold shadow-lg shadow-primary/20 mb-3">م</div>
-          <h1 className="text-2xl font-black text-foreground">إعداد حساب المدير الأول</h1>
-          <p className="text-muted-foreground text-sm mt-1">هذا النموذج مخصص لإنشاء الحساب الإداري الأول فقط</p>
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary text-white text-2xl mb-3">م</div>
+          <h1 className="text-2xl font-black">تسجيل مدرسة جديدة</h1>
+          <p className="text-muted-foreground text-sm mt-1">أنشئ ملف المدرسة وحساب مديرها في خطوة واحدة</p>
         </div>
-
-        <div className="mb-5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
-          <svg viewBox="0 0 24 24" className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-            <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-          </svg>
+        <form onSubmit={submit} className="space-y-4">
           <div>
-            <p className="text-sm font-semibold text-amber-800">إنشاء حسابات المعلمين والطلاب</p>
-            <p className="text-xs text-amber-700 mt-0.5">بعد تسجيل الدخول كمدير، أنشئ حسابات المعلمين والطلاب من صفحة "إدارة المستخدمين". المعلم يدخل برقم موظفه، والطالب بالرقم الوطني.</p>
+            <label className="block text-sm font-semibold mb-1.5">اسم المدرسة *</label>
+            <input className={input} name="schoolName" value={form.schoolName} onChange={change} required minLength={3} placeholder="مثال: متوسطة النور للبنين" />
           </div>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-xl border border-border p-7">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold mb-1.5">
-                الاسم الكامل <span className="text-destructive">*</span>
-                <span className="text-muted-foreground text-xs font-normal mr-1">(ثلاثة أسماء على الأقل)</span>
-              </label>
-              <input type="text" name="name" value={form.name} onChange={handleChange}
-                className={`${inputCls} ${nameError ? "border-destructive" : ""}`}
-                placeholder="أحمد محمد علي الجبوري" required />
-              {nameError && <p className="text-xs text-destructive mt-1">⚠ {nameError}</p>}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold mb-1.5">اسم المستخدم <span className="text-destructive">*</span></label>
-                <input type="text" name="username" value={form.username} onChange={handleChange}
-                  className={inputCls} placeholder="admin123" required autoComplete="username" />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1.5">رقم الهاتف <span className="text-destructive">*</span></label>
-                <input type="tel" name="phone" value={form.phone} onChange={handleChange}
-                  className={inputCls} placeholder="07XXXXXXXXX" required dir="ltr" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold mb-1.5">
-                البريد الإلكتروني
-                <span className="text-muted-foreground text-xs font-normal mr-1">(اختياري — للدخول بالبريد)</span>
-              </label>
-              <input type="email" name="email" value={form.email} onChange={handleChange}
-                className={inputCls} placeholder="admin@school.iq" dir="ltr" autoComplete="email" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold mb-1.5">كلمة المرور <span className="text-destructive">*</span></label>
-                <div className="relative">
-                  <input type={showPass ? "text" : "password"} name="password" value={form.password} onChange={handleChange}
-                    className={`${inputCls} pl-9`} placeholder="6 أحرف على الأقل" required minLength={6} autoComplete="new-password" />
-                  <button type="button" onClick={() => setShowPass(!showPass)} tabIndex={-1}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                    <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2}>
-                      {showPass
-                        ? <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></>
-                        : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>}
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1.5">تأكيد كلمة المرور <span className="text-destructive">*</span></label>
-                <input type="password" name="confirmPassword" value={form.confirmPassword} onChange={handleChange}
-                  className={`${inputCls} ${passwordMismatch ? "border-destructive" : ""}`}
-                  placeholder="أعد الإدخال" required autoComplete="new-password" />
-                {passwordMismatch && <p className="text-xs text-destructive mt-1">⚠ غير متطابقتين</p>}
-              </div>
-            </div>
-
-            <button type="submit" disabled={isLoading}
-              className="w-full py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-60 shadow-md shadow-primary/20">
-              {isLoading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="60" strokeDashoffset="20" />
-                  </svg>
-                  جاري الإعداد...
-                </span>
-              ) : "إنشاء حساب المدير"}
-            </button>
-          </form>
-
-          <div className="mt-5 text-center text-sm text-muted-foreground">
-            لديك حساب بالفعل؟{" "}
-            <Link href="/login" className="text-primary font-semibold hover:underline">تسجيل الدخول</Link>
+          <div>
+            <label className="block text-sm font-semibold mb-1.5">نوع المدرسة *</label>
+            <select className={input} name="schoolType" value={form.schoolType} onChange={change} required>
+              <option value="primary">ابتدائية</option>
+              <option value="intermediate">متوسطة</option>
+              <option value="preparatory">إعدادية</option>
+              <option value="other">أخرى</option>
+            </select>
           </div>
-        </div>
+          <div className="border-t pt-4">
+            <h2 className="font-bold mb-3">بيانات مدير المدرسة</h2>
+            <label className="block text-sm font-semibold mb-1.5">الاسم الكامل (ثلاثي على الأقل) *</label>
+            <input className={input} name="name" value={form.name} onChange={change} required placeholder="أحمد محمد علي" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div><label className="block text-sm font-semibold mb-1.5">اسم المستخدم *</label><input className={input} name="username" value={form.username} onChange={change} required minLength={3} autoComplete="username" /></div>
+            <div><label className="block text-sm font-semibold mb-1.5">رقم الهاتف *</label><input className={input} name="phone" value={form.phone} onChange={change} required type="tel" dir="ltr" placeholder="07XXXXXXXXX" /></div>
+          </div>
+          <div><label className="block text-sm font-semibold mb-1.5">البريد الإلكتروني (اختياري)</label><input className={input} name="email" value={form.email} onChange={change} type="email" dir="ltr" /></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div><label className="block text-sm font-semibold mb-1.5">كلمة المرور *</label><input className={input} name="password" value={form.password} onChange={change} type="password" required minLength={8} autoComplete="new-password" /></div>
+            <div><label className="block text-sm font-semibold mb-1.5">تأكيد كلمة المرور *</label><input className={input} name="confirmPassword" value={form.confirmPassword} onChange={change} type="password" required autoComplete="new-password" /></div>
+          </div>
+          <p className="text-xs text-muted-foreground">كل مدرسة تحصل على مساحة بيانات مستقلة. لا يمكن لمدير مدرسة الاطلاع على بيانات مدرسة أخرى.</p>
+          <button type="submit" disabled={loading} className="w-full py-3 rounded-xl bg-primary text-white font-bold disabled:opacity-60">
+            {loading ? "جارٍ تسجيل المدرسة..." : "تسجيل المدرسة وإنشاء حساب المدير"}
+          </button>
+        </form>
+        <div className="mt-5 text-center text-sm text-muted-foreground">لديك حساب؟ <Link href="/login" className="text-primary font-semibold">تسجيل الدخول</Link></div>
       </div>
     </div>
   );
