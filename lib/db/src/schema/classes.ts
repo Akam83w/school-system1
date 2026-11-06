@@ -5,6 +5,7 @@ import { teachersTable } from "./teachers";
 
 export const classesTable = pgTable("classes", {
   id: serial("id").primaryKey(),
+  schoolId: integer("school_id").notNull(),
   name: text("name").notNull(),
   grade: text("grade").notNull(),
   teacherId: integer("teacher_id").notNull().references(() => teachersTable.id),
