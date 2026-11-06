@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { adminsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
 import { createHmac, timingSafeEqual } from "crypto";
 import bcrypt from "bcryptjs";
 import { logger } from "../lib/logger";
@@ -24,7 +24,7 @@ const SECRET = SESSION_SECRET;
 logger.info("✅ SESSION_SECRET loaded successfully from environment");
 
 // =====================================================
-// PASSWORD - PROPER VERIFICATION
+// PASSWORD
 // =====================================================
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
@@ -32,8 +32,7 @@ export async function hashPassword(password: string): Promise<string> {
 
 async function verifyPassword(password: string, hash: string): Promise<boolean> {
   try {
-    const valid = await bcrypt.compare(password, hash);
-    return valid;
+    return await bcrypt.compare(password, hash);
   } catch (err) {
     logger.warn({ err }, "Password verification failed");
     return false;
@@ -45,28 +44,33 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
 // =====================================================
 function generateToken(adminId: number) {
   const payload = Buffer.from(
-    JSON.stringify({ adminId, ts: Date.now(), exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60 })
+    JSON.stringify({
+      adminId,
+      ts: Date.now(),
+      exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60,
+    })
   ).toString("base64");
 
-  const sig = createHmac("sha256", SECRET)
-    .update(payload)
-    .digest("hex");
-
+  const sig = createHmac("sha256", SECRET).update(payload).digest("hex");
   return `${payload}.${sig}`;
 }
 
 export function verifyToken(token: string) {
   try {
     const [payload, sig] = token.split(".");
-    const expected = createHmac("sha256", SECRET)
-      .update(payload)
-      .digest("hex");
+    if (!payload || !sig) return null;
 
+    const expected = createHmac("sha256", SECRET).update(payload).digest("hex");
     const supplied = Buffer.from(sig, "hex");
     const calculated = Buffer.from(expected, "hex");
-    if (supplied.length !== calculated.length || !timingSafeEqual(supplied, calculated)) return null;
+    if (supplied.length !== calculated.length || !timingSafeEqual(supplied, calculated)) {
+      return null;
+    }
+
     const decoded = JSON.parse(Buffer.from(payload, "base64").toString());
-    if (!decoded?.adminId || !decoded?.exp || decoded.exp < Math.floor(Date.now() / 1000)) return null;
+    if (!decoded?.adminId || !decoded?.exp || decoded.exp < Math.floor(Date.now() / 1000)) {
+      return null;
+    }
     return decoded;
   } catch {
     return null;
@@ -74,31 +78,37 @@ export function verifyToken(token: string) {
 }
 
 // =====================================================
-// LOGIN ENDPOINT
+// LOGIN
 // =====================================================
 router.post("/auth/login", async (req: any, res: any) => {
   try {
-    const { username, identifier, password } = req.body;
-    const user = username || identifier;
+    const { username, identifier, password } = req.body ?? {};
+    const user = (username || identifier || "").toString().trim();
 
     if (!user || !password) {
-      return res.status(400).json({ error: "بيانات ناقصة" });
+      return res.status(400).json({ error: "بيانات ناقصة: أدخل اسم المستخدم وكلمة المرور" });
     }
 
     const [admin] = await db
       .select()
       .from(adminsTable)
-      .where(eq(adminsTable.username, user));
+      .where(eq(adminsTable.username, user))
+      .limit(1);
 
     if (!admin) {
-      return res.status(401).json({ error: "خطأ في البيانات" });
+      logger.warn({ user }, "Login failed: user not found");
+      return res.status(401).json({ error: "اسم المستخدم أو كلمة المرور غير صحيحة" });
     }
 
-    // ✅ PROPER PASSWORD VERIFICATION
-    const valid = await verifyPassword(password, admin.passwordHash);
+    if (!admin.passwordHash) {
+      logger.error({ userId: admin.id }, "Login failed: missing password hash");
+      return res.status(401).json({ error: "اسم المستخدم أو كلمة المرور غير صحيحة" });
+    }
 
+    const valid = await verifyPassword(String(password), admin.passwordHash);
     if (!valid) {
-      return res.status(401).json({ error: "خطأ في البيانات" });
+      logger.warn({ userId: admin.id }, "Login failed: invalid password");
+      return res.status(401).json({ error: "اسم المستخدم أو كلمة المرور غير صحيحة" });
     }
 
     const token = generateToken(admin.id);
@@ -116,12 +126,69 @@ router.post("/auth/login", async (req: any, res: any) => {
     });
   } catch (err) {
     logger.error({ err }, "Login error");
-    return res.status(500).json({ error: "Server error" });
+    return res.status(500).json({ error: "خطأ في الخادم أثناء تسجيل الدخول" });
   }
 });
 
 // =====================================================
-// GET ME ENDPOINT
+// REGISTER (first admin only — when no users exist)
+// =====================================================
+router.post("/auth/register", async (req: any, res: any) => {
+  try {
+    const [adminCount] = await db.select({ count: count() }).from(adminsTable);
+    if ((adminCount?.count ?? 0) > 0) {
+      return res.status(403).json({
+        error: "يتم إنشاء الحسابات الجديدة من قِبَل مدير النظام فقط.",
+      });
+    }
+
+    const { name, username, phone, email, password } = req.body ?? {};
+
+    if (!name || !username || !password) {
+      return res.status(400).json({ error: "الاسم واسم المستخدم وكلمة المرور مطلوبة" });
+    }
+
+    const nameParts = String(name).trim().split(/\s+/).filter(Boolean);
+    if (nameParts.length < 3) {
+      return res.status(400).json({ error: "يجب أن يتكون الاسم من ثلاثة أسماء على الأقل" });
+    }
+
+    if (String(password).length < 6) {
+      return res.status(400).json({ error: "يجب أن تكون كلمة المرور 6 أحرف على الأقل" });
+    }
+
+    const usernameStr = String(username).trim();
+    const passwordHash = await hashPassword(String(password));
+
+    const [newUser] = await db
+      .insert(adminsTable)
+      .values({
+        name: String(name).trim(),
+        username: usernameStr,
+        phone: phone ? String(phone).trim() : null,
+        email: email ? String(email).trim().toLowerCase() : null,
+        passwordHash,
+        role: "admin",
+        linkedId: null,
+      })
+      .returning();
+
+    logger.info({ userId: newUser.id, username: newUser.username }, "First admin registered");
+
+    return res.status(201).json({
+      id: newUser.id,
+      username: newUser.username,
+      name: newUser.name,
+      role: newUser.role,
+    });
+  } catch (err) {
+    logger.error({ err }, "Register error");
+    return res.status(500).json({ error: "خطأ في الخادم أثناء إنشاء الحساب" });
+  }
+});
+
+// =====================================================
+// GET ME
 // =====================================================
 router.get("/auth/me", async (req: any, res: any) => {
   try {
@@ -141,7 +208,8 @@ router.get("/auth/me", async (req: any, res: any) => {
     const [admin] = await db
       .select()
       .from(adminsTable)
-      .where(eq(adminsTable.id, decoded.adminId));
+      .where(eq(adminsTable.id, decoded.adminId))
+      .limit(1);
 
     if (!admin) {
       return res.status(404).json({ error: "المستخدم غير موجود" });
