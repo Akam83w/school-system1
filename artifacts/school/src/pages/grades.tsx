@@ -363,7 +363,7 @@ export default function GradesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold mb-1.5">العام الدراسي *</label>
-                  <select required value={form.academicYear} onChange={(e) => setForm({ ...form, academicYear: e.target.value })} className={inputCls}>
+                  <select disabled={!!editingGrade} required value={form.academicYear} onChange={(e) => setForm({ ...form, academicYear: e.target.value })} className={inputCls}>
                     {[...allYears].reverse().map((y) => <option key={y.id} value={y.label}>{y.label}</option>)}
                   </select>
                 </div>
@@ -376,7 +376,7 @@ export default function GradesPage() {
               </div>
               <div>
                 <label className="block text-sm font-semibold mb-1.5">الطالب *</label>
-                <select required value={form.studentId} onChange={(e) => {
+                <select disabled={!!editingGrade} required value={form.studentId} onChange={(e) => {
                   const s = (students ?? []).find(st => st.id === Number(e.target.value));
                   setForm({ ...form, studentId: e.target.value, classId: s?.classId ? String(s.classId) : form.classId });
                 }} className={inputCls}>
@@ -387,14 +387,14 @@ export default function GradesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold mb-1.5">الصف *</label>
-                  <select required value={form.classId} onChange={(e) => setForm({ ...form, classId: e.target.value })} className={inputCls}>
+                  <select disabled={!!editingGrade} required value={form.classId} onChange={(e) => setForm({ ...form, classId: e.target.value })} className={inputCls}>
                     <option value="">اختر الصف</option>
                     {(classes ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1.5">المادة *</label>
-                  <select required value={form.subjectId} onChange={(e) => setForm({ ...form, subjectId: e.target.value })} className={inputCls}>
+                  <select disabled={!!editingGrade} required value={form.subjectId} onChange={(e) => setForm({ ...form, subjectId: e.target.value })} className={inputCls}>
                     <option value="">اختر المادة</option>
                     {(subjects ?? []).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
