@@ -97,6 +97,10 @@ export default function GradesPage() {
       notes: form.notes,
     };
 
+    if (editingGrade && !isOnline) {
+      toast({ title: "لا يمكن تعديل الدرجة دون اتصال بالإنترنت", description: "اتصل بالإنترنت ثم أعد المحاولة", variant: "destructive" });
+      return;
+    }
     if (editingGrade) {
       updateMutation.mutate({ id: editingGrade.id, data: { score: payload.score, maxScore: payload.maxScore, examType: payload.examType, examDate: payload.examDate, notes: payload.notes } });
       return;
