@@ -3,6 +3,7 @@ import { adminsTable } from "./admins";
 
 export const auditLogsTable = pgTable("audit_logs", {
   id: serial("id").primaryKey(),
+  schoolId: integer("school_id").notNull(),
   userId: integer("user_id").references(() => adminsTable.id, { onDelete: "set null" }),
   userName: text("user_name").notNull().default(""),
   userPhone: text("user_phone").notNull().default(""),
