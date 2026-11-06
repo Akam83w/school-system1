@@ -7,14 +7,17 @@ import { cn } from "@/lib/utils";
 
 type LoginRole = "admin" | "teacher" | "student";
 
-const ROLE_CONFIG: Record<LoginRole, {
-  label: string;
-  icon: string;
-  identifierLabel: string;
-  placeholder: string;
-  demoId: string;
-  demoNote: string;
-}> = {
+const ROLE_CONFIG: Record<
+  LoginRole,
+  {
+    label: string;
+    icon: string;
+    identifierLabel: string;
+    placeholder: string;
+    demoId: string;
+    demoNote: string;
+  }
+> = {
   admin: {
     label: "مدير",
     icon: "👑",
@@ -41,6 +44,19 @@ const ROLE_CONFIG: Record<LoginRole, {
   },
 };
 
+function extractErrorMessage(e: any): string {
+  if (!e) return "بيانات الدخول غير صحيحة";
+  if (typeof e.message === "string" && e.message && !e.message.startsWith("HTTP error")) {
+    return e.message;
+  }
+  if (e?.body?.error) return String(e.body.error);
+  if (e?.response?.data?.error) return String(e.response.data.error);
+  if (e?.status === 401) return "اسم المستخدم أو كلمة المرور غير صحيحة";
+  if (e?.status === 429) return "تم تجاوز الحد الأقصى للمحاولات";
+  if (e?.status >= 500) return "خطأ في الخادم، حاول مرة أخرى";
+  return e?.message || "بيانات الدخول غير صحيحة";
+}
+
 export default function LoginPage() {
   const [role, setRole] = useState<LoginRole>("admin");
   const [identifier, setIdentifier] = useState("admin");
@@ -56,12 +72,12 @@ export default function LoginPage() {
         window.location.href = "/dashboard";
       },
       onError: (e: any) => {
-        const msg = e?.response?.data?.error ?? e?.message ?? "بيانات الدخول غير صحيحة";
-        if (e?.response?.status === 429) {
-          toast({ title: "تم تجاوز الحد الأقصى", description: msg, variant: "destructive" });
-        } else {
-          toast({ title: "خطأ في تسجيل الدخول", description: msg, variant: "destructive" });
-        }
+        const msg = extractErrorMessage(e);
+        toast({
+          title: "خطأ في تسجيل الدخول",
+          description: msg,
+          variant: "destructive",
+        });
       },
     },
   });
@@ -74,14 +90,14 @@ export default function LoginPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    loginMutation.mutate({ data: { identifier, password, role } });
+    loginMutation.mutate({ data: { identifier: identifier.trim(), password, role } });
   }
 
-  const inputCls = "w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-sm";
+  const inputCls =
+    "w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-sm";
 
   return (
     <div className="min-h-screen flex" dir="rtl">
-      {/* Left decorative panel */}
       <div className="hidden lg:flex flex-1 bg-sidebar flex-col items-center justify-center p-12 relative overflow-hidden">
         <div className="absolute inset-0 opacity-5">
           <svg className="w-full h-full" viewBox="0 0 400 400">
@@ -95,12 +111,12 @@ export default function LoginPage() {
         <div className="relative z-10 text-center max-w-sm">
           <div className="w-28 h-28 rounded-3xl bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-8 shadow-2xl">
             <svg viewBox="0 0 64 64" className="w-16 h-16" fill="none">
-              <rect x="8" y="30" width="48" height="28" rx="2" fill="hsl(213 94% 68%)" opacity="0.9"/>
-              <polygon points="32,8 4,30 60,30" fill="hsl(213 94% 68%)"/>
-              <rect x="26" y="40" width="12" height="18" rx="2" fill="hsl(224 47% 13%)"/>
-              <rect x="10" y="34" width="10" height="8" rx="1" fill="white" opacity="0.6"/>
-              <rect x="44" y="34" width="10" height="8" rx="1" fill="white" opacity="0.6"/>
-              <circle cx="32" cy="22" r="3" fill="white" opacity="0.7"/>
+              <rect x="8" y="30" width="48" height="28" rx="2" fill="hsl(213 94% 68%)" opacity="0.9" />
+              <polygon points="32,8 4,30 60,30" fill="hsl(213 94% 68%)" />
+              <rect x="26" y="40" width="12" height="18" rx="2" fill="hsl(224 47% 13%)" />
+              <rect x="10" y="34" width="10" height="8" rx="1" fill="white" opacity="0.6" />
+              <rect x="44" y="34" width="10" height="8" rx="1" fill="white" opacity="0.6" />
+              <circle cx="32" cy="22" r="3" fill="white" opacity="0.7" />
             </svg>
           </div>
           <h2 className="text-3xl font-black text-white mb-3 leading-tight">نظام إدارة المدرسة</h2>
@@ -123,11 +139,12 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right form panel */}
       <div className="flex-1 lg:max-w-md flex items-center justify-center p-6 bg-background">
         <div className="w-full max-w-sm">
           <div className="lg:hidden text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-white text-2xl font-bold shadow-lg mb-3">م</div>
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-white text-2xl font-bold shadow-lg mb-3">
+              م
+            </div>
             <h1 className="text-2xl font-black text-foreground">نظام إدارة المدرسة</h1>
           </div>
 
@@ -137,7 +154,6 @@ export default function LoginPage() {
               <p className="text-muted-foreground text-sm mt-1">سجّل دخولك للمتابعة</p>
             </div>
 
-            {/* Role selector */}
             <div className="grid grid-cols-3 gap-1.5 p-1 bg-muted/50 rounded-xl mb-5">
               {(["admin", "teacher", "student"] as LoginRole[]).map((r) => (
                 <button
@@ -159,9 +175,11 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-1.5">{config.identifierLabel}</label>
+                <label className="block text-sm font-semibold text-foreground mb-1.5">
+                  {config.identifierLabel}
+                </label>
                 <input
-                  type={role === "admin" ? "text" : "text"}
+                  type="text"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   className={inputCls}
@@ -197,7 +215,8 @@ export default function LoginPage() {
                       </svg>
                     ) : (
                       <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2}>
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
                       </svg>
                     )}
                   </button>
@@ -216,11 +235,12 @@ export default function LoginPage() {
                     </svg>
                     جاري التحقق...
                   </span>
-                ) : "تسجيل الدخول"}
+                ) : (
+                  "تسجيل الدخول"
+                )}
               </button>
             </form>
 
-            {/* Demo credentials */}
             <div className="mt-5 p-3.5 bg-primary/5 border border-primary/10 rounded-xl">
               <p className="text-xs font-semibold text-primary mb-1">بيانات تجريبية — {config.label}</p>
               <p className="text-xs text-muted-foreground">{config.demoNote}</p>
