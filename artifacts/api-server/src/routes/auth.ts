@@ -97,7 +97,7 @@ router.post("/auth/login", async (req: any, res: any) => {
 
     if (requestedRole === "admin") {
       [admin] = await db.select().from(adminsTable)
-        .where(eq(adminsTable.username, user)).limit(1);
+        .where(or(eq(adminsTable.username, user), eq(adminsTable.phone, user))).limit(1);
       if (admin && !["admin", "super_admin"].includes(admin.role)) admin = undefined;
     } else if (requestedRole === "teacher") {
       // Accounts are created by the administrator with a username.
