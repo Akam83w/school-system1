@@ -16,22 +16,23 @@ function getGradeColor(pct: number) {
   return "bg-red-100 text-red-700";
 }
 
-export default function ClassDetailPage({ id }: { id: number }) {
+export default function ClassDetailPage({ id }: { id: number | string }) {
+  const recordId = Number(id);
   const [activeTab, setActiveTab] = useState<"students" | "attendance">("students");
   const [, navigate] = useLocation();
 
-  const { data: cls, isLoading: classLoading } = useGetClass(id, {
-    query: { queryKey: getGetClassQueryKey(id), enabled: !!id },
+  const { data: cls, isLoading: classLoading } = useGetClass(recordId, {
+    query: { queryKey: getGetClassQueryKey(recordId), enabled: Number.isFinite(recordId) && recordId > 0 },
   });
 
   const { data: students, isLoading: studentsLoading } = useListStudents(
-    { classId: id },
-    { query: { queryKey: getListStudentsQueryKey({ classId: id }), enabled: !!id } }
+    { classId: recordId },
+    { query: { queryKey: getListStudentsQueryKey({ classId: recordId }), enabled: !!id } }
   );
 
   const { data: attendance, isLoading: attendanceLoading } = useListAttendance(
-    { classId: id },
-    { query: { queryKey: getListAttendanceQueryKey({ classId: id }), enabled: !!id && activeTab === "attendance" } }
+    { classId: recordId },
+    { query: { queryKey: getListAttendanceQueryKey({ classId: recordId }), enabled: !!id && activeTab === "attendance" } }
   );
 
   if (classLoading) {
