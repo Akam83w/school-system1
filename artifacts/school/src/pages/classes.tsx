@@ -126,7 +126,7 @@ export default function ClassesPage() {
 
   function openCreate() {
     setEditing(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm, grade: schoolStage ?? "ابتدائي" });
     setShowForm(true);
   }
 
@@ -393,7 +393,7 @@ export default function ClassesPage() {
                   onChange={(e) => setForm({ ...form, grade: e.target.value })}
                   className="w-full px-3 py-2.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors bg-white"
                 >
-                  {STAGES.map((s) => (
+                  {visibleStages.map((s) => (
                     <option key={s} value={s}>
                       {STAGE_LABELS[s]}
                     </option>
