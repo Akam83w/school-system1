@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { adminsTable, teachersTable, studentsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { requireAuth, requireAdmin, type AuthUser } from "../middlewares/auth";
 import { hashPassword } from "./auth";
 import { logAudit } from "../lib/audit";
@@ -67,7 +67,7 @@ router.post("/users", requireAuth, requireAdmin, async (req, res) => {
       return;
     }
     const [linkedAccount] = await db.select({ id: adminsTable.id }).from(adminsTable)
-      .where(eq(adminsTable.linkedId, Number(linkedId))).limit(1);
+      .where(and(eq(adminsTable.linkedId, Number(linkedId)), eq(adminsTable.role, String(role)))).limit(1);
     if (linkedAccount) {
       res.status(409).json({ error: "هذا السجل مرتبط بحساب دخول مسبقاً" });
       return;
