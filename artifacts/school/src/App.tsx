@@ -58,11 +58,11 @@ function Router() {
       </Route>
       <Route path="/register" component={RegisterPage} />
       <Route path="/dashboard" component={DashboardPage} />
-      <Route path="/students/:id" component={StudentDetailPage} />
+      <Route path="/students/:id">{(params) => <StudentDetailPage id={params.id} />}</Route>
       <Route path="/students" component={StudentsPage} />
-      <Route path="/teachers/:id" component={TeacherDetailPage} />
+      <Route path="/teachers/:id">{(params) => <TeacherDetailPage id={params.id} />}</Route>
       <Route path="/teachers" component={TeachersPage} />
-      <Route path="/classes/:id" component={ClassDetailPage} />
+      <Route path="/classes/:id">{(params) => <ClassDetailPage id={params.id} />}</Route>
       <Route path="/classes" component={ClassesPage} />
       <Route path="/subjects" component={SubjectsPage} />
       <Route path="/attendance" component={AttendancePage} />

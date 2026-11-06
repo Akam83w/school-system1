@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Layout } from "@/components/layout";
 import {
   useListGrades, useListStudents, useListSubjects, useListClasses,
-  useCreateGrade, useDeleteGrade, getListGradesQueryKey, useGetMe,
+  useCreateGrade, useUpdateGrade, useDeleteGrade, getListGradesQueryKey, useGetMe,
 } from "@workspace/api-client-react";
 import { useAcademicYear } from "@/contexts/AcademicYearContext";
 import type { Grade } from "@workspace/api-client-react";
@@ -41,6 +41,7 @@ export default function GradesPage() {
   const [yearFilter, setYearFilter] = useState(selectedYear);
   const [examTypeFilter, setExamTypeFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [editingGrade, setEditingGrade] = useState<Grade | null>(null);
   const [form, setForm] = useState<GradeForm>(() => makeEmptyForm(selectedYear));
 
   // Sync page filter when the global year selector changes
@@ -73,6 +74,7 @@ export default function GradesPage() {
     },
   });
   const deleteMutation = useDeleteGrade({ mutation: { onSuccess: () => { queryClient.invalidateQueries({ queryKey: getListGradesQueryKey() }); toast({ title: "تم حذف الدرجة" }); } } });
+  const updateMutation = useUpdateGrade({ mutation: { onSuccess: () => { queryClient.invalidateQueries({ queryKey: getListGradesQueryKey() }); setShowForm(false); setEditingGrade(null); setForm(makeEmptyForm(yearFilter)); toast({ title: "تم تحديث الدرجة بنجاح" }); }, onError: (err: any) => { toast({ title: "فشل تعديل الدرجة", description: err?.response?.data?.error ?? "حدث خطأ", variant: "destructive" }); } } });
 
   const loadOfflinePending = useCallback(async () => {
     const items = await getOfflineActionsForEntity('grade');
@@ -94,6 +96,15 @@ export default function GradesPage() {
       academicYear: form.academicYear,
       notes: form.notes,
     };
+
+    if (editingGrade && !isOnline) {
+      toast({ title: "لا يمكن تعديل الدرجة دون اتصال بالإنترنت", description: "اتصل بالإنترنت ثم أعد المحاولة", variant: "destructive" });
+      return;
+    }
+    if (editingGrade) {
+      updateMutation.mutate({ id: editingGrade.id, data: { score: payload.score, maxScore: payload.maxScore, examType: payload.examType, examDate: payload.examDate, notes: payload.notes } });
+      return;
+    }
 
     if (!isOnline) {
       const studentName = (students ?? []).find(s => s.id === Number(form.studentId))?.fullName ?? '';
@@ -293,7 +304,7 @@ export default function GradesPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/10">
-                      {["الطالب", "المادة", "الصف", "الدرجة", "النسبة", "نوع الامتحان", "التاريخ", ...(isAdmin ? ["حذف"] : [])].map((h) => (
+                      {["الطالب", "المادة", "الصف", "الدرجة", "النسبة", "نوع الامتحان", "التاريخ", ...(isAdmin ? ["الإجراءات"] : [])].map((h) => (
                         <th key={h} className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{h}</th>
                       ))}
                     </tr>
@@ -319,7 +330,9 @@ export default function GradesPage() {
                           </td>
                           <td className="px-4 py-3 text-muted-foreground text-xs font-mono">{g.examDate}</td>
                           {isAdmin && (
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-3 whitespace-nowrap space-x-1 space-x-reverse">
+                              <button onClick={() => { setEditingGrade(g); setForm({ studentId: String(g.studentId), subjectId: String(g.subjectId), classId: String(g.classId), score: String(g.score), maxScore: String(g.maxScore), examType: g.examType, examDate: g.examDate, academicYear: g.academicYear, notes: g.notes ?? "" }); setShowForm(true); }}
+                                className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-semibold transition-colors">تعديل</button>
                               <button onClick={() => { if (confirm("حذف هذه الدرجة؟")) deleteMutation.mutate({ id: g.id }); }}
                                 className="px-2.5 py-1 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-xs font-semibold transition-colors">حذف</button>
                             </td>
@@ -341,12 +354,12 @@ export default function GradesPage() {
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[95vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-border px-6 py-4 flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold">تسجيل درجة جديدة</h3>
+                <h3 className="text-base font-bold">{editingGrade ? "تعديل بيانات الدرجة" : "تسجيل درجة جديدة"}</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {isOnline ? "الدرجات محفوظة كسجلات تاريخية دائمة" : "⚡ سيُحفظ محلياً ويُزامَن لاحقاً"}
                 </p>
               </div>
-              <button onClick={() => setShowForm(false)} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground transition-colors">
+              <button onClick={() => { setShowForm(false); setEditingGrade(null); }} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground transition-colors">
                 <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
@@ -354,7 +367,7 @@ export default function GradesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold mb-1.5">العام الدراسي *</label>
-                  <select required value={form.academicYear} onChange={(e) => setForm({ ...form, academicYear: e.target.value })} className={inputCls}>
+                  <select disabled={!!editingGrade} required value={form.academicYear} onChange={(e) => setForm({ ...form, academicYear: e.target.value })} className={inputCls}>
                     {[...allYears].reverse().map((y) => <option key={y.id} value={y.label}>{y.label}</option>)}
                   </select>
                 </div>
@@ -367,7 +380,7 @@ export default function GradesPage() {
               </div>
               <div>
                 <label className="block text-sm font-semibold mb-1.5">الطالب *</label>
-                <select required value={form.studentId} onChange={(e) => {
+                <select disabled={!!editingGrade} required value={form.studentId} onChange={(e) => {
                   const s = (students ?? []).find(st => st.id === Number(e.target.value));
                   setForm({ ...form, studentId: e.target.value, classId: s?.classId ? String(s.classId) : form.classId });
                 }} className={inputCls}>
@@ -378,14 +391,14 @@ export default function GradesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold mb-1.5">الصف *</label>
-                  <select required value={form.classId} onChange={(e) => setForm({ ...form, classId: e.target.value })} className={inputCls}>
+                  <select disabled={!!editingGrade} required value={form.classId} onChange={(e) => setForm({ ...form, classId: e.target.value })} className={inputCls}>
                     <option value="">اختر الصف</option>
                     {(classes ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1.5">المادة *</label>
-                  <select required value={form.subjectId} onChange={(e) => setForm({ ...form, subjectId: e.target.value })} className={inputCls}>
+                  <select disabled={!!editingGrade} required value={form.subjectId} onChange={(e) => setForm({ ...form, subjectId: e.target.value })} className={inputCls}>
                     <option value="">اختر المادة</option>
                     {(subjects ?? []).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
@@ -408,11 +421,11 @@ export default function GradesPage() {
                 <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className={inputCls} placeholder="اختياري" />
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="submit" disabled={createMutation.isPending}
+                <button type="submit" disabled={createMutation.isPending || updateMutation.isPending}
                   className="flex-1 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 disabled:opacity-60 shadow-sm transition-all">
-                  {createMutation.isPending ? "جاري الحفظ..." : isOnline ? "تسجيل الدرجة" : "حفظ محلياً ⚡"}
+                  {createMutation.isPending || updateMutation.isPending ? "جاري الحفظ..." : editingGrade ? "حفظ التعديلات" : isOnline ? "تسجيل الدرجة" : "حفظ محلياً ⚡"}
                 </button>
-                <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-colors">إلغاء</button>
+                <button type="button" onClick={() => { setShowForm(false); setEditingGrade(null); }} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-colors">إلغاء</button>
               </div>
             </form>
           </div>
