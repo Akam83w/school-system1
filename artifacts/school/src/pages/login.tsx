@@ -23,8 +23,8 @@ const ROLE_CONFIG: Record<
     icon: "👑",
     identifierLabel: "البريد الإلكتروني أو اسم المستخدم",
     placeholder: "admin أو admin@school.iq",
-    demoId: "admin",
-    demoNote: "اسم المستخدم: admin | كلمة المرور: admin123",
+    demoId: "",
+    demoNote: "أدخل اسم المستخدم وكلمة المرور اللذين حددهما مدير النظام.",
   },
   teacher: {
     label: "معلم",
@@ -59,7 +59,7 @@ function extractErrorMessage(e: any): string {
 
 export default function LoginPage() {
   const [role, setRole] = useState<LoginRole>("admin");
-  const [identifier, setIdentifier] = useState("admin");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const { toast } = useToast();

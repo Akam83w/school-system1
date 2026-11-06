@@ -309,16 +309,16 @@ function AdminUsersContent({ currentUserId }: { currentUserId?: number }) {
                   <option value="admin">مدير النظام</option>
                 </select>
               </div>
-              {linkedOptions.length > 0 && (
+              {createForm.role !== "admin" && (
                 <div>
                   <label className="block text-xs font-semibold mb-1.5">
-                    ربط بـ{createForm.role === "teacher" ? "معلم" : "طالب"}
-                    <span className="text-muted-foreground font-normal mr-1">(اختياري — يحدد ما يراه المستخدم)</span>
+                    ربط بـ{createForm.role === "teacher" ? "معلم" : "طالب"} <span className="text-destructive">*</span>
                   </label>
-                  <select name="linkedId" value={createForm.linkedId} onChange={handleCreateChange} className={selectCls}>
-                    <option value="">— بدون ربط —</option>
+                  <select name="linkedId" value={createForm.linkedId} onChange={handleCreateChange} className={selectCls} required>
+                    <option value="">— اختر السجل المرتبط —</option>
                     {linkedOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
+                  {linkedOptions.length === 0 && <p className="text-xs text-amber-600 mt-1">لا توجد سجلات حالياً. أضف المعلم أو الطالب أولاً.</p>}
                 </div>
               )}
               <div className="flex gap-3 pt-2">

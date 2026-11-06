@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { adminsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { adminsTable, teachersTable, studentsTable } from "@workspace/db";
+import { eq, and } from "drizzle-orm";
 import { requireAuth, requireAdmin, type AuthUser } from "../middlewares/auth";
 import { hashPassword } from "./auth";
 import { logAudit } from "../lib/audit";
@@ -52,6 +52,26 @@ router.post("/users", requireAuth, requireAdmin, async (req, res) => {
   if (typeof password !== "string" || password.length < 6) {
     res.status(400).json({ error: "يجب أن تكون كلمة المرور 6 أحرف على الأقل" });
     return;
+  }
+
+  if (["teacher", "student"].includes(String(role))) {
+    if (linkedId == null || !Number.isInteger(Number(linkedId)) || Number(linkedId) <= 0) {
+      res.status(400).json({ error: "يجب ربط حساب المعلم أو الطالب بسجله أولاً" });
+      return;
+    }
+    const profileTable = role === "teacher" ? teachersTable : studentsTable;
+    const [profile] = await db.select({ id: profileTable.id }).from(profileTable)
+      .where(eq(profileTable.id, Number(linkedId))).limit(1);
+    if (!profile) {
+      res.status(404).json({ error: "سجل المعلم أو الطالب المرتبط غير موجود" });
+      return;
+    }
+    const [linkedAccount] = await db.select({ id: adminsTable.id }).from(adminsTable)
+      .where(and(eq(adminsTable.linkedId, Number(linkedId)), eq(adminsTable.role, String(role)))).limit(1);
+    if (linkedAccount) {
+      res.status(409).json({ error: "هذا السجل مرتبط بحساب دخول مسبقاً" });
+      return;
+    }
   }
 
   const phoneStr = String(phone).trim();
