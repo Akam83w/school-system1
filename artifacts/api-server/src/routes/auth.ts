@@ -147,7 +147,12 @@ router.get("/auth/me", async (req: any, res: any) => {
     if (!decoded) return res.status(401).json({ error: "توكن غير صالح" });
     const [admin] = await db.select().from(adminsTable).where(eq(adminsTable.id, decoded.adminId)).limit(1);
     if (!admin) return res.status(404).json({ error: "المستخدم غير موجود" });
-    return res.json({ id: admin.id, name: admin.name, role: admin.role, username: admin.username, phone: admin.phone, linkedId: admin.linkedId, schoolId: admin.schoolId });
+    let schoolType: string | null = null;
+    if (admin.schoolId) {
+      const [school] = await db.select({ schoolType: schoolsTable.schoolType }).from(schoolsTable).where(eq(schoolsTable.id, admin.schoolId)).limit(1);
+      schoolType = school?.schoolType ?? null;
+    }
+    return res.json({ id: admin.id, name: admin.name, role: admin.role, username: admin.username, phone: admin.phone, linkedId: admin.linkedId, schoolId: admin.schoolId, schoolType });
   } catch (err) {
     logger.error({ err }, "ME error");
     return res.status(500).json({ error: "Server error" });
