@@ -2,9 +2,11 @@ import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { teachersTable } from "./teachers";
+import { schoolsTable } from "./schools";
 
 export const classesTable = pgTable("classes", {
   id: serial("id").primaryKey(),
+  schoolId: integer("school_id").notNull().references(() => schoolsTable.id, { onDelete: "restrict" }),
   name: text("name").notNull(),
   grade: text("grade").notNull(),
   teacherId: integer("teacher_id").notNull().references(() => teachersTable.id),

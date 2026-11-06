@@ -1,5 +1,6 @@
 import { db } from "@workspace/db";
-import { auditLogsTable } from "@workspace/db";
+import { auditLogsTable, adminsTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 
 export async function logAudit(opts: {
   userId: number;
@@ -12,7 +13,11 @@ export async function logAudit(opts: {
   afterData?: unknown;
 }) {
   try {
+    const [actor] = await db.select({ schoolId: adminsTable.schoolId }).from(adminsTable)
+      .where(eq(adminsTable.id, opts.userId)).limit(1);
+    if (!actor?.schoolId) return;
     await db.insert(auditLogsTable).values({
+      schoolId: actor.schoolId,
       userId: opts.userId,
       userName: opts.userName,
       userPhone: opts.userPhone,
@@ -23,6 +28,6 @@ export async function logAudit(opts: {
       afterData: (opts.afterData ?? null) as any,
     });
   } catch {
-    // audit failure must never break the main request
+    // Audit logging must not break the primary operation.
   }
 }
