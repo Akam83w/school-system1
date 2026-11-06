@@ -8,7 +8,7 @@ const router = Router();
 
 async function getNextCode(schoolId: number) {
   const all = await db.select({ code: studentsTable.studentCode }).from(studentsTable).where(eq(studentsTable.schoolId, schoolId));
-  const nums = all.map(s => parseInt(s.code.replace("STU", ""))).filter(n => !isNaN(n));
+  const nums = all.map(s => parseInt(s.code.split("-").pop() ?? "")).filter(n => !isNaN(n));
   return `STU${schoolId}-${(nums.length ? Math.max(...nums) : 1000) + 1}`;
 }
 async function classBelongsToSchool(classId: number | null, schoolId: number) {
