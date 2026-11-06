@@ -29,18 +29,18 @@ const ROLE_CONFIG: Record<
   teacher: {
     label: "معلم",
     icon: "👨‍🏫",
-    identifierLabel: "رقم الموظف (Employee ID)",
-    placeholder: "مثال: TCH001",
+    identifierLabel: "اسم المستخدم",
+    placeholder: "أدخل اسم المستخدم الذي أنشأه المدير",
     demoId: "",
-    demoNote: "أدخل رقم الموظف الخاص بك",
+    demoNote: "أدخل اسم المستخدم وكلمة المرور اللذين حددهما مدير النظام.",
   },
   student: {
     label: "طالب",
     icon: "👨‍🎓",
-    identifierLabel: "الرقم الوطني (National ID)",
-    placeholder: "مثال: 1234567890",
+    identifierLabel: "اسم المستخدم",
+    placeholder: "أدخل اسم المستخدم الذي أنشأه المدير",
     demoId: "",
-    demoNote: "أدخل رقمك الوطني كما هو مسجّل لدى المدير",
+    demoNote: "أدخل اسم المستخدم وكلمة المرور اللذين حددهما مدير النظام.",
   },
 };
 
