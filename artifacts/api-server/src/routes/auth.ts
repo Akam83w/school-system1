@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { adminsTable, teachersTable, studentsTable } from "@workspace/db";
-import { eq, count } from "drizzle-orm";
+import { eq, count, or } from "drizzle-orm";
 import { createHmac, timingSafeEqual } from "crypto";
 import bcrypt from "bcryptjs";
 import { logger } from "../lib/logger";
@@ -102,8 +102,9 @@ router.post("/auth/login", async (req: any, res: any) => {
     } else if (requestedRole === "teacher") {
       // Accounts are created by the administrator with a username.
       // Prefer that username; retain teacherCode as a legacy sign-in identifier.
+      // Accept the assigned username or the phone number saved on the login account.
       [admin] = await db.select().from(adminsTable)
-        .where(eq(adminsTable.username, user)).limit(1);
+        .where(or(eq(adminsTable.username, user), eq(adminsTable.phone, user))).limit(1);
       if (admin && admin.role !== "teacher") admin = undefined;
 
       if (!admin) {
@@ -118,8 +119,9 @@ router.post("/auth/login", async (req: any, res: any) => {
     } else {
       // Student accounts also use the username assigned by the administrator.
       // Retain nationalId as a legacy sign-in identifier for older accounts.
+      // Accept username or account phone; nationalId remains supported below.
       [admin] = await db.select().from(adminsTable)
-        .where(eq(adminsTable.username, user)).limit(1);
+        .where(or(eq(adminsTable.username, user), eq(adminsTable.phone, user))).limit(1);
       if (admin && admin.role !== "student") admin = undefined;
 
       if (!admin) {
