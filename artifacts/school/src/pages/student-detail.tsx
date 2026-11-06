@@ -43,22 +43,23 @@ function getGradeBadge(pct: number) {
   return "bg-red-100 text-red-700";
 }
 
-export default function StudentDetailPage({ id }: { id: number }) {
+export default function StudentDetailPage({ id }: { id: number | string }) {
+  const recordId = Number(id);
   const [yearFilter, setYearFilter] = useState(CURRENT_YEAR);
   const [activeTab, setActiveTab] = useState<"grades" | "attendance">("grades");
 
-  const { data: student, isLoading } = useGetStudent(id, {
-    query: { queryKey: getGetStudentQueryKey(id), enabled: !!id },
+  const { data: student, isLoading } = useGetStudent(recordId, {
+    query: { queryKey: getGetStudentQueryKey(recordId), enabled: Number.isFinite(recordId) && recordId > 0 },
   });
 
   // Load all grades for all years (no year filter on the API call — we group client-side for year tabs)
   const { data: allGrades } = useListGrades(
-    { studentId: id },
-    { query: { queryKey: getListGradesQueryKey({ studentId: id }), enabled: !!id } }
+    { studentId: recordId },
+    { query: { queryKey: getListGradesQueryKey({ studentId: recordId }), enabled: !!id } }
   );
   const { data: allAttendance } = useListAttendance(
-    { studentId: id },
-    { query: { queryKey: getListAttendanceQueryKey({ studentId: id }), enabled: !!id } }
+    { studentId: recordId },
+    { query: { queryKey: getListAttendanceQueryKey({ studentId: recordId }), enabled: !!id } }
   );
 
   // Filter by selected year
