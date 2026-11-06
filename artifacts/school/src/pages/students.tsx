@@ -221,7 +221,7 @@ export default function StudentsPage() {
             </svg>
             <input
               type="text"
-              placeholder="بحث بالاسم أو الرمز..."
+              placeholder="بحث بالاسم أو الرمز أو الرقم الوطني أو الهاتف..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pr-9 pl-3 py-2.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"

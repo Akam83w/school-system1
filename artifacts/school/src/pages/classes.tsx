@@ -74,10 +74,14 @@ export default function ClassesPage() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { data: me } = useGetMe();
+  const { data: me, isLoading: meLoading } = useGetMe();
   const isAdmin = (me as any)?.role === "admin";
+  const schoolType = (me as any)?.schoolType as string | undefined;
+  const schoolStage: Stage | null = schoolType === "primary" ? "ابتدائي" : schoolType === "intermediate" ? "متوسط" : schoolType === "preparatory" ? "إعدادي" : null;
+  const visibleStages = meLoading ? [] : schoolStage ? [schoolStage] : STAGES;
 
   const { data: classes, isLoading } = useListClasses();
+  const pageLoading = isLoading || meLoading;
   const { data: teachers } = useListTeachers();
 
   const createMutation = useCreateClass({
@@ -123,7 +127,7 @@ export default function ClassesPage() {
 
   function openCreate() {
     setEditing(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm, grade: schoolStage ?? "ابتدائي" });
     setShowForm(true);
   }
 
@@ -175,12 +179,13 @@ export default function ClassesPage() {
 
   const isPending = createMutation.isPending || updateMutation.isPending;
   const allClasses = classes ?? [];
-  const totalStudents = allClasses.reduce((s, c) => s + (c.studentCount ?? 0), 0);
 
+
+  const schoolClasses = schoolStage ? allClasses.filter((c) => c.grade === schoolStage) : allClasses;
   const grouped: Record<Stage, typeof allClasses> = {
-    ابتدائي: allClasses.filter((c) => c.grade === "ابتدائي"),
-    متوسط: allClasses.filter((c) => c.grade === "متوسط"),
-    إعدادي: allClasses.filter((c) => c.grade === "إعدادي"),
+    ابتدائي: schoolClasses.filter((c) => c.grade === "ابتدائي"),
+    متوسط: schoolClasses.filter((c) => c.grade === "متوسط"),
+    إعدادي: schoolClasses.filter((c) => c.grade === "إعدادي"),
   };
 
   return (
@@ -191,7 +196,7 @@ export default function ClassesPage() {
           <div>
             <h1 className="text-2xl font-bold">الصفوف الدراسية</h1>
             <p className="text-muted-foreground text-sm">
-              {isLoading ? "جاري التحميل..." : `${allClasses.length} صف · ${totalStudents} طالب`}
+              {pageLoading ? "جاري التحميل..." : `${schoolClasses.length} صف · ${schoolClasses.reduce((s, c) => s + (c.studentCount ?? 0), 0)} طالب`}
             </p>
           </div>
           {isAdmin && (
@@ -209,9 +214,9 @@ export default function ClassesPage() {
         </div>
 
         {/* Stage chips */}
-        {!isLoading && (
+        {!pageLoading && (
           <div className="flex flex-wrap gap-2">
-            {STAGES.map((stage) => {
+            {visibleStages.map((stage) => {
               const cols = STAGE_COLORS[stage];
               const stageClasses = grouped[stage];
               const stageStudents = stageClasses.reduce((s, c) => s + (c.studentCount ?? 0), 0);
@@ -231,7 +236,7 @@ export default function ClassesPage() {
           </div>
         )}
 
-        {isLoading && (
+        {pageLoading && (
           <div className="space-y-6">
             {[...Array(3)].map((_, i) => (
               <div key={i}>
@@ -246,8 +251,8 @@ export default function ClassesPage() {
           </div>
         )}
 
-        {!isLoading &&
-          STAGES.map((stage) => {
+        {!pageLoading &&
+          visibleStages.map((stage) => {
             const stageClasses = grouped[stage];
             if (stageClasses.length === 0) return null;
             const cols = STAGE_COLORS[stage];
@@ -328,7 +333,7 @@ export default function ClassesPage() {
             );
           })}
 
-        {!isLoading && allClasses.length === 0 && (
+        {!pageLoading && schoolClasses.length === 0 && (
           <div className="bg-card rounded-xl border border-card-border p-16 text-center shadow-sm">
             <p className="text-4xl mb-3">🏫</p>
             <p className="font-semibold text-foreground mb-1">لا توجد صفوف دراسية</p>
@@ -389,7 +394,7 @@ export default function ClassesPage() {
                   onChange={(e) => setForm({ ...form, grade: e.target.value })}
                   className="w-full px-3 py-2.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors bg-white"
                 >
-                  {STAGES.map((s) => (
+                  {visibleStages.map((s) => (
                     <option key={s} value={s}>
                       {STAGE_LABELS[s]}
                     </option>

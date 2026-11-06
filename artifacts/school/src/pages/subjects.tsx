@@ -26,6 +26,13 @@ export default function SubjectsPage() {
   const { toast } = useToast();
   const { data: me } = useGetMe();
   const isAdmin = (me as any)?.role === "admin";
+  const schoolType = (me as any)?.schoolType as string | undefined;
+  const subjectOptions = schoolType === "primary"
+    ? ["التربية الإسلامية", "اللغة العربية", "اللغة الإنكليزية", "الرياضيات", "العلوم", "الاجتماعيات", "التربية الفنية", "التربية الرياضية"]
+    : schoolType === "intermediate"
+      ? ["التربية الإسلامية", "اللغة العربية", "اللغة الإنكليزية", "الرياضيات", "الأحياء", "الكيمياء", "الفيزياء", "الاجتماعيات", "التربية الوطنية", "الحاسوب", "التربية الفنية", "التربية الرياضية"]
+      : ["التربية الإسلامية", "اللغة العربية", "اللغة الإنكليزية", "الرياضيات", "الأحياء", "الكيمياء", "الفيزياء", "الاجتماعيات", "التاريخ", "الجغرافية", "الحاسوب", "التربية الفنية", "التربية الرياضية"];
+  const availableSubjects = form.name && !subjectOptions.includes(form.name) ? [form.name, ...subjectOptions] : subjectOptions;
 
   const { data: subjects, isLoading } = useListSubjects();
   const { data: teachers } = useListTeachers();
@@ -138,7 +145,10 @@ export default function SubjectsPage() {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
                 <label className={labelCls}>اسم المادة *</label>
-                <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputCls} placeholder="مثال: الرياضيات" />
+                <select required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputCls}>
+                  <option value="">اختر المادة</option>
+                  {availableSubjects.map((name) => <option key={name} value={name}>{name}</option>)}
+                </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

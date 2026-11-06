@@ -32,7 +32,16 @@ router.get("/students", requireAuth, async (req, res) => {
     else if (classId) { res.json([]); return; }
     else conditions.push(inArray(studentsTable.classId, ids));
   } else if (classId) conditions.push(eq(studentsTable.classId, Number(classId)));
-  if (search && user.role !== "student") conditions.push(or(ilike(studentsTable.fullName, `%${search}%`), ilike(studentsTable.studentCode, `%${search}%`))!);
+  if (search && user.role !== "student") {
+    const term = String(search).trim();
+    conditions.push(or(
+      ilike(studentsTable.fullName, `%${term}%`),
+      ilike(studentsTable.studentCode, `%${term}%`),
+      ilike(studentsTable.nationalId, `%${term}%`),
+      ilike(studentsTable.phone, `%${term}%`),
+      ilike(studentsTable.parentPhone, `%${term}%`),
+    )!);
+  }
   const rows = await db.select({
     id: studentsTable.id, fullName: studentsTable.fullName, studentCode: studentsTable.studentCode,
     nationalId: studentsTable.nationalId, classId: studentsTable.classId, className: classesTable.name,

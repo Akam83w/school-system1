@@ -10,11 +10,12 @@ import {
 import { Link } from "wouter";
 import { useState } from "react";
 
-export default function TeacherDetailPage({ id }: { id: number }) {
+export default function TeacherDetailPage({ id }: { id: number | string }) {
+  const recordId = Number(id);
   const [activeTab, setActiveTab] = useState<"classes" | "subjects">("classes");
 
-  const { data: teacher, isLoading } = useGetTeacher(id, {
-    query: { queryKey: getGetTeacherQueryKey(id), enabled: !!id },
+  const { data: teacher, isLoading } = useGetTeacher(recordId, {
+    query: { queryKey: getGetTeacherQueryKey(recordId), enabled: Number.isFinite(recordId) && recordId > 0 },
   });
 
   const { data: allClasses } = useListClasses({
@@ -25,8 +26,8 @@ export default function TeacherDetailPage({ id }: { id: number }) {
     query: { queryKey: getListSubjectsQueryKey() },
   });
 
-  const classes = (allClasses ?? []).filter((c) => c.teacherId === id);
-  const subjects = (allSubjects ?? []).filter((s) => s.teacherId === id);
+  const classes = (allClasses ?? []).filter((c) => c.teacherId === recordId);
+  const subjects = (allSubjects ?? []).filter((s) => s.teacherId === recordId);
 
   if (isLoading) {
     return (
