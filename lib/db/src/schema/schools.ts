@@ -6,6 +6,7 @@ export const schoolsTable = pgTable("schools", {
   id: serial("id").primaryKey(),
   schoolCode: text("school_code").notNull().unique(), // SCH-2026-001
   name: text("name").notNull(),
+  schoolType: text("school_type").notNull().default("other"),
   arabicName: text("arabic_name"),
   address: text("address"),
   phone: text("phone"),
