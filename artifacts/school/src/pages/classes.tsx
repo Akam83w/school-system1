@@ -74,11 +74,12 @@ export default function ClassesPage() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { data: me } = useGetMe();
+  const { data: me, isLoading: meLoading } = useGetMe();
   const isAdmin = (me as any)?.role === "admin";
   const schoolType = (me as any)?.schoolType as string | undefined;
   const schoolStage: Stage | null = schoolType === "primary" ? "ابتدائي" : schoolType === "intermediate" ? "متوسط" : schoolType === "preparatory" ? "إعدادي" : null;
-  const visibleStages = schoolStage ? [schoolStage] : STAGES;
+  const visibleStages = meLoading ? [] : schoolStage ? [schoolStage] : STAGES;
+  const pageLoading = isLoading || meLoading;
 
   const { data: classes, isLoading } = useListClasses();
   const { data: teachers } = useListTeachers();
@@ -195,7 +196,7 @@ export default function ClassesPage() {
           <div>
             <h1 className="text-2xl font-bold">الصفوف الدراسية</h1>
             <p className="text-muted-foreground text-sm">
-              {isLoading ? "جاري التحميل..." : `${schoolClasses.length} صف · ${schoolClasses.reduce((s, c) => s + (c.studentCount ?? 0), 0)} طالب`}
+              {pageLoading ? "جاري التحميل..." : `${schoolClasses.length} صف · ${schoolClasses.reduce((s, c) => s + (c.studentCount ?? 0), 0)} طالب`}
             </p>
           </div>
           {isAdmin && (
@@ -213,7 +214,7 @@ export default function ClassesPage() {
         </div>
 
         {/* Stage chips */}
-        {!isLoading && (
+        {!pageLoading && (
           <div className="flex flex-wrap gap-2">
             {visibleStages.map((stage) => {
               const cols = STAGE_COLORS[stage];
@@ -235,7 +236,7 @@ export default function ClassesPage() {
           </div>
         )}
 
-        {isLoading && (
+        {pageLoading && (
           <div className="space-y-6">
             {[...Array(3)].map((_, i) => (
               <div key={i}>
@@ -250,7 +251,7 @@ export default function ClassesPage() {
           </div>
         )}
 
-        {!isLoading &&
+        {!pageLoading &&
           visibleStages.map((stage) => {
             const stageClasses = grouped[stage];
             if (stageClasses.length === 0) return null;
@@ -332,7 +333,7 @@ export default function ClassesPage() {
             );
           })}
 
-        {!isLoading && schoolClasses.length === 0 && (
+        {!pageLoading && schoolClasses.length === 0 && (
           <div className="bg-card rounded-xl border border-card-border p-16 text-center shadow-sm">
             <p className="text-4xl mb-3">🏫</p>
             <p className="font-semibold text-foreground mb-1">لا توجد صفوف دراسية</p>
