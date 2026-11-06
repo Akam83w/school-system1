@@ -2,6 +2,7 @@ import { pgTable, text, serial, timestamp, boolean, integer } from "drizzle-orm/
 
 export const announcementsTable = pgTable("announcements", {
   id: serial("id").primaryKey(),
+  schoolId: integer("school_id").notNull(),
   title: text("title").notNull(),
   body: text("body").notNull(),
   type: text("type").notNull().default("info"),
