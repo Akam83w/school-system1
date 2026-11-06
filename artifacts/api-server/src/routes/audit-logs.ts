@@ -2,25 +2,15 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { auditLogsTable } from "@workspace/db";
 import { desc, eq, and } from "drizzle-orm";
-import { requireAuth, requireAdmin } from "../middlewares/auth";
-
+import { requireAuth, requireAdmin, type AuthUser } from "../middlewares/auth";
 const router = Router();
-
-// GET /audit-logs — admin only
 router.get("/audit-logs", requireAuth, requireAdmin, async (req, res) => {
-  const { action, entity, limit } = req.query;
-  const conditions: any[] = [];
+  const user = (req as any).user as AuthUser; const { action, entity, limit } = req.query;
+  const conditions: any[] = [eq(auditLogsTable.schoolId, user.schoolId!)];
   if (action) conditions.push(eq(auditLogsTable.action, String(action)));
   if (entity) conditions.push(eq(auditLogsTable.entity, String(entity)));
-
-  const rows = await db
-    .select()
-    .from(auditLogsTable)
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(desc(auditLogsTable.createdAt))
-    .limit(limit ? Number(limit) : 500);
-
+  const safeLimit = Math.min(1000, Math.max(1, Number(limit) || 500));
+  const rows = await db.select().from(auditLogsTable).where(and(...conditions)).orderBy(desc(auditLogsTable.createdAt)).limit(safeLimit);
   res.json(rows);
 });
-
 export default router;
