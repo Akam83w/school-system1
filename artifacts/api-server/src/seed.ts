@@ -1,5 +1,6 @@
 import { db } from "@workspace/db";
-import { schoolsTable, academicYearsTable, count, eq, and } from "@workspace/db";
+import { schoolsTable, academicYearsTable } from "@workspace/db";
+import { count, eq, and } from "drizzle-orm";
 import { logger } from "./lib/logger";
 
 export const IRAQI_CLASSES = [
