@@ -76,6 +76,9 @@ export default function ClassesPage() {
   const { toast } = useToast();
   const { data: me } = useGetMe();
   const isAdmin = (me as any)?.role === "admin";
+  const schoolType = (me as any)?.schoolType as string | undefined;
+  const schoolStage: Stage | null = schoolType === "primary" ? "ابتدائي" : schoolType === "intermediate" ? "متوسط" : schoolType === "preparatory" ? "إعدادي" : null;
+  const visibleStages = schoolStage ? [schoolStage] : STAGES;
 
   const { data: classes, isLoading } = useListClasses();
   const { data: teachers } = useListTeachers();
@@ -175,12 +178,13 @@ export default function ClassesPage() {
 
   const isPending = createMutation.isPending || updateMutation.isPending;
   const allClasses = classes ?? [];
-  const totalStudents = allClasses.reduce((s, c) => s + (c.studentCount ?? 0), 0);
 
+
+  const schoolClasses = schoolStage ? allClasses.filter((c) => c.grade === schoolStage) : allClasses;
   const grouped: Record<Stage, typeof allClasses> = {
-    ابتدائي: allClasses.filter((c) => c.grade === "ابتدائي"),
-    متوسط: allClasses.filter((c) => c.grade === "متوسط"),
-    إعدادي: allClasses.filter((c) => c.grade === "إعدادي"),
+    ابتدائي: schoolClasses.filter((c) => c.grade === "ابتدائي"),
+    متوسط: schoolClasses.filter((c) => c.grade === "متوسط"),
+    إعدادي: schoolClasses.filter((c) => c.grade === "إعدادي"),
   };
 
   return (
@@ -191,7 +195,7 @@ export default function ClassesPage() {
           <div>
             <h1 className="text-2xl font-bold">الصفوف الدراسية</h1>
             <p className="text-muted-foreground text-sm">
-              {isLoading ? "جاري التحميل..." : `${allClasses.length} صف · ${totalStudents} طالب`}
+              {isLoading ? "جاري التحميل..." : `${schoolClasses.length} صف · ${schoolClasses.reduce((s, c) => s + (c.studentCount ?? 0), 0)} طالب`}
             </p>
           </div>
           {isAdmin && (
@@ -211,7 +215,7 @@ export default function ClassesPage() {
         {/* Stage chips */}
         {!isLoading && (
           <div className="flex flex-wrap gap-2">
-            {STAGES.map((stage) => {
+            {visibleStages.map((stage) => {
               const cols = STAGE_COLORS[stage];
               const stageClasses = grouped[stage];
               const stageStudents = stageClasses.reduce((s, c) => s + (c.studentCount ?? 0), 0);
@@ -247,7 +251,7 @@ export default function ClassesPage() {
         )}
 
         {!isLoading &&
-          STAGES.map((stage) => {
+          visibleStages.map((stage) => {
             const stageClasses = grouped[stage];
             if (stageClasses.length === 0) return null;
             const cols = STAGE_COLORS[stage];
@@ -328,7 +332,7 @@ export default function ClassesPage() {
             );
           })}
 
-        {!isLoading && allClasses.length === 0 && (
+        {!isLoading && schoolClasses.length === 0 && (
           <div className="bg-card rounded-xl border border-card-border p-16 text-center shadow-sm">
             <p className="text-4xl mb-3">🏫</p>
             <p className="font-semibold text-foreground mb-1">لا توجد صفوف دراسية</p>
