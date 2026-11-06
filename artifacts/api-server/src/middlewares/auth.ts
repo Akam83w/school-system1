@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { db, adminsTable } from "@workspace/db";
+import { db, adminsTable, schoolsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { verifyToken } from "../routes/auth";
 
