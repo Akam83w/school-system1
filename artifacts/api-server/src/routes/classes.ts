@@ -4,143 +4,74 @@ import { classesTable, teachersTable, studentsTable } from "@workspace/db";
 import { eq, count, and } from "drizzle-orm";
 import { requireAuth, requireAdmin, type AuthUser } from "../middlewares/auth";
 import { logAudit } from "../lib/audit";
-
 const router = Router();
 
-// GET /classes — filtered by role:
-//   admin  → all classes
-//   teacher → only classes assigned to the teacher (via linkedId → teacherId)
-//   student → only own class (via linkedId → students.id → classId)
+async function teacherBelongsToSchool(teacherId: number, schoolId: number) {
+  const [t] = await db.select({ id: teachersTable.id }).from(teachersTable).where(and(eq(teachersTable.id, teacherId), eq(teachersTable.schoolId, schoolId))).limit(1);
+  return !!t;
+}
 router.get("/classes", requireAuth, async (req, res) => {
   const user = (req as any).user as AuthUser;
-  let whereCondition: ReturnType<typeof eq> | undefined;
-
+  const filters = [eq(classesTable.schoolId, user.schoolId!)];
   if (user.role === "teacher") {
     if (!user.linkedId) { res.json([]); return; }
-    whereCondition = eq(classesTable.teacherId, user.linkedId);
+    filters.push(eq(classesTable.teacherId, user.linkedId));
   } else if (user.role === "student") {
     if (!user.linkedId) { res.json([]); return; }
-    const [student] = await db
-      .select({ classId: studentsTable.classId })
-      .from(studentsTable)
-      .where(eq(studentsTable.id, user.linkedId));
+    const [student] = await db.select({ classId: studentsTable.classId }).from(studentsTable).where(and(eq(studentsTable.id, user.linkedId), eq(studentsTable.schoolId, user.schoolId!))).limit(1);
     if (!student?.classId) { res.json([]); return; }
-    whereCondition = eq(classesTable.id, student.classId);
+    filters.push(eq(classesTable.id, student.classId));
   }
-
-  const rows = await db
-    .select({
-      id: classesTable.id,
-      name: classesTable.name,
-      grade: classesTable.grade,
-      teacherId: classesTable.teacherId,
-      teacherName: teachersTable.fullName,
-      capacity: classesTable.capacity,
-      academicYear: classesTable.academicYear,
-      room: classesTable.room,
-    })
-    .from(classesTable)
-    .leftJoin(teachersTable, eq(classesTable.teacherId, teachersTable.id))
-    .where(whereCondition);
-
-  const result = await Promise.all(
-    rows.map(async (row) => {
-      const [cnt] = await db
-        .select({ count: count() })
-        .from(studentsTable)
-        .where(eq(studentsTable.classId, row.id));
-      return { ...row, teacherName: row.teacherName ?? "", studentCount: cnt?.count ?? 0 };
-    })
-  );
+  const rows = await db.select({ id: classesTable.id, name: classesTable.name, grade: classesTable.grade, teacherId: classesTable.teacherId, teacherName: teachersTable.fullName, capacity: classesTable.capacity, academicYear: classesTable.academicYear, room: classesTable.room })
+    .from(classesTable).leftJoin(teachersTable, and(eq(classesTable.teacherId, teachersTable.id), eq(teachersTable.schoolId, user.schoolId!))).where(and(...filters));
+  const result = await Promise.all(rows.map(async row => {
+    const [cnt] = await db.select({ count: count() }).from(studentsTable).where(and(eq(studentsTable.classId, row.id), eq(studentsTable.schoolId, user.schoolId!)));
+    return { ...row, teacherName: row.teacherName ?? "", studentCount: cnt?.count ?? 0 };
+  }));
   res.json(result);
 });
-
-// POST /classes — admin only
 router.post("/classes", requireAuth, requireAdmin, async (req, res) => {
   const user = (req as any).user as AuthUser;
-  const { name, grade, teacherId, capacity, academicYear, room } = req.body;
-  const [row] = await db.insert(classesTable).values({
-    name,
-    grade,
-    teacherId: Number(teacherId),
-    capacity: Number(capacity),
-    academicYear: academicYear ?? "2024-2025",
-    room: room ?? null,
-  }).returning();
-  const [teacher] = await db.select({ fullName: teachersTable.fullName }).from(teachersTable).where(eq(teachersTable.id, row.teacherId));
+  const { name, grade, teacherId, capacity, academicYear, room } = req.body ?? {};
+  if (!name || !grade || !Number.isInteger(Number(teacherId)) || !(await teacherBelongsToSchool(Number(teacherId), user.schoolId!))) {
+    res.status(400).json({ error: "بيانات الصف أو المعلم غير صحيحة، ويجب أن يكون المعلم من مدرستك" }); return;
+  }
+  const [row] = await db.insert(classesTable).values({ schoolId: user.schoolId!, name, grade, teacherId: Number(teacherId), capacity: Number(capacity ?? 40), academicYear: academicYear ?? "2026-2027", room: room ?? null }).returning();
   await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "create", entity: "class", entityId: row.id, afterData: row });
-  res.status(201).json({ ...row, teacherName: teacher?.fullName ?? "", studentCount: 0 });
+  res.status(201).json({ ...row, studentCount: 0 });
 });
-
-// GET /classes/:id — role-aware access
 router.get("/classes/:id", requireAuth, async (req, res) => {
-  const user = (req as any).user as AuthUser;
-  const classId = Number(req.params.id);
-
-  // Teacher: only own class
-  if (user.role === "teacher") {
-    if (!user.linkedId) { res.status(403).json({ error: "غير مصرح" }); return; }
-    const [check] = await db.select({ id: classesTable.id }).from(classesTable).where(
-      and(eq(classesTable.id, classId), eq(classesTable.teacherId, user.linkedId))
-    );
-    if (!check) { res.status(403).json({ error: "غير مصرح: هذا الصف ليس صفك المعيّن" }); return; }
-  }
-  // Student: only own class
+  const user = (req as any).user as AuthUser; const id = Number(req.params.id);
+  const filters = [eq(classesTable.id, id), eq(classesTable.schoolId, user.schoolId!)];
+  if (user.role === "teacher") filters.push(eq(classesTable.teacherId, user.linkedId ?? -1));
   if (user.role === "student") {
-    if (!user.linkedId) { res.status(403).json({ error: "غير مصرح" }); return; }
-    const [student] = await db.select({ classId: studentsTable.classId }).from(studentsTable).where(eq(studentsTable.id, user.linkedId));
-    if (student?.classId !== classId) { res.status(403).json({ error: "غير مصرح: لا يمكنك الاطلاع على بيانات هذا الصف" }); return; }
+    const [student] = await db.select({ classId: studentsTable.classId }).from(studentsTable).where(and(eq(studentsTable.id, user.linkedId ?? -1), eq(studentsTable.schoolId, user.schoolId!))).limit(1);
+    if (student?.classId !== id) { res.status(404).json({ error: "الصف غير موجود" }); return; }
   }
-
-  const [row] = await db
-    .select({
-      id: classesTable.id,
-      name: classesTable.name,
-      grade: classesTable.grade,
-      teacherId: classesTable.teacherId,
-      teacherName: teachersTable.fullName,
-      capacity: classesTable.capacity,
-      academicYear: classesTable.academicYear,
-      room: classesTable.room,
-    })
-    .from(classesTable)
-    .leftJoin(teachersTable, eq(classesTable.teacherId, teachersTable.id))
-    .where(eq(classesTable.id, classId));
+  const [row] = await db.select({ id: classesTable.id, name: classesTable.name, grade: classesTable.grade, teacherId: classesTable.teacherId, teacherName: teachersTable.fullName, capacity: classesTable.capacity, academicYear: classesTable.academicYear, room: classesTable.room }).from(classesTable).leftJoin(teachersTable, and(eq(classesTable.teacherId, teachersTable.id), eq(teachersTable.schoolId, user.schoolId!))).where(and(...filters)).limit(1);
   if (!row) { res.status(404).json({ error: "الصف غير موجود" }); return; }
-  const [cnt] = await db.select({ count: count() }).from(studentsTable).where(eq(studentsTable.classId, row.id));
+  const [cnt] = await db.select({ count: count() }).from(studentsTable).where(and(eq(studentsTable.classId, id), eq(studentsTable.schoolId, user.schoolId!)));
   res.json({ ...row, teacherName: row.teacherName ?? "", studentCount: cnt?.count ?? 0 });
 });
-
-// PATCH /classes/:id — admin only
 router.patch("/classes/:id", requireAuth, requireAdmin, async (req, res) => {
-  const user = (req as any).user as AuthUser;
-  const [before] = await db.select().from(classesTable).where(eq(classesTable.id, Number(req.params.id)));
+  const user = (req as any).user as AuthUser; const id = Number(req.params.id);
+  const [before] = await db.select().from(classesTable).where(and(eq(classesTable.id, id), eq(classesTable.schoolId, user.schoolId!))).limit(1);
   if (!before) { res.status(404).json({ error: "الصف غير موجود" }); return; }
-  const { name, grade, teacherId, capacity, academicYear, room } = req.body;
-  const updates: Record<string, unknown> = {};
-  if (name !== undefined) updates.name = name;
-  if (grade !== undefined) updates.grade = grade;
+  const { name, grade, teacherId, capacity, academicYear, room } = req.body ?? {};
+  if (teacherId !== undefined && !(await teacherBelongsToSchool(Number(teacherId), user.schoolId!))) { res.status(400).json({ error: "المعلم يجب أن يكون من المدرسة نفسها" }); return; }
+  const updates: any = {};
+  for (const key of ["name", "grade", "capacity", "academicYear", "room"]) if (req.body?.[key] !== undefined) updates[key] = req.body[key];
   if (teacherId !== undefined) updates.teacherId = Number(teacherId);
-  if (capacity !== undefined) updates.capacity = Number(capacity);
-  if (academicYear !== undefined) updates.academicYear = academicYear;
-  if (room !== undefined) updates.room = room;
-  const [row] = await db.update(classesTable).set(updates).where(eq(classesTable.id, Number(req.params.id))).returning();
-  if (!row) { res.status(404).json({ error: "الصف غير موجود" }); return; }
-  const [teacher] = await db.select({ fullName: teachersTable.fullName }).from(teachersTable).where(eq(teachersTable.id, row.teacherId));
-  const [cnt] = await db.select({ count: count() }).from(studentsTable).where(eq(studentsTable.classId, row.id));
-  await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "update", entity: "class", entityId: row.id, beforeData: before, afterData: row });
-  res.json({ ...row, teacherName: teacher?.fullName ?? "", studentCount: cnt?.count ?? 0 });
+  const [row] = await db.update(classesTable).set(updates).where(and(eq(classesTable.id, id), eq(classesTable.schoolId, user.schoolId!))).returning();
+  await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "update", entity: "class", entityId: id, beforeData: before, afterData: row });
+  res.json(row);
 });
-
-// DELETE /classes/:id — admin only
 router.delete("/classes/:id", requireAuth, requireAdmin, async (req, res) => {
-  const user = (req as any).user as AuthUser;
-  const [before] = await db.select().from(classesTable).where(eq(classesTable.id, Number(req.params.id)));
-  await db.delete(classesTable).where(eq(classesTable.id, Number(req.params.id)));
-  if (before) {
-    await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "delete", entity: "class", entityId: before.id, beforeData: before });
-  }
+  const user = (req as any).user as AuthUser; const id = Number(req.params.id);
+  const [before] = await db.select().from(classesTable).where(and(eq(classesTable.id, id), eq(classesTable.schoolId, user.schoolId!))).limit(1);
+  if (!before) { res.status(404).json({ error: "الصف غير موجود" }); return; }
+  await db.delete(classesTable).where(and(eq(classesTable.id, id), eq(classesTable.schoolId, user.schoolId!)));
+  await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "delete", entity: "class", entityId: id, beforeData: before });
   res.status(204).end();
 });
-
 export default router;
