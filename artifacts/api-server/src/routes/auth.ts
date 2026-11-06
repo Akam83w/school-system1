@@ -100,20 +100,36 @@ router.post("/auth/login", async (req: any, res: any) => {
         .where(eq(adminsTable.username, user)).limit(1);
       if (admin && !["admin", "super_admin"].includes(admin.role)) admin = undefined;
     } else if (requestedRole === "teacher") {
-      const [teacher] = await db.select({ id: teachersTable.id })
-        .from(teachersTable).where(eq(teachersTable.teacherCode, user)).limit(1);
-      if (teacher) {
-        [admin] = await db.select().from(adminsTable)
-          .where(eq(adminsTable.linkedId, teacher.id)).limit(1);
-        if (admin && admin.role !== "teacher") admin = undefined;
+      // Accounts are created by the administrator with a username.
+      // Prefer that username; retain teacherCode as a legacy sign-in identifier.
+      [admin] = await db.select().from(adminsTable)
+        .where(eq(adminsTable.username, user)).limit(1);
+      if (admin && admin.role !== "teacher") admin = undefined;
+
+      if (!admin) {
+        const [teacher] = await db.select({ id: teachersTable.id })
+          .from(teachersTable).where(eq(teachersTable.teacherCode, user)).limit(1);
+        if (teacher) {
+          [admin] = await db.select().from(adminsTable)
+            .where(eq(adminsTable.linkedId, teacher.id)).limit(1);
+          if (admin && admin.role !== "teacher") admin = undefined;
+        }
       }
     } else {
-      const [student] = await db.select({ id: studentsTable.id })
-        .from(studentsTable).where(eq(studentsTable.nationalId, user)).limit(1);
-      if (student) {
-        [admin] = await db.select().from(adminsTable)
-          .where(eq(adminsTable.linkedId, student.id)).limit(1);
-        if (admin && admin.role !== "student") admin = undefined;
+      // Student accounts also use the username assigned by the administrator.
+      // Retain nationalId as a legacy sign-in identifier for older accounts.
+      [admin] = await db.select().from(adminsTable)
+        .where(eq(adminsTable.username, user)).limit(1);
+      if (admin && admin.role !== "student") admin = undefined;
+
+      if (!admin) {
+        const [student] = await db.select({ id: studentsTable.id })
+          .from(studentsTable).where(eq(studentsTable.nationalId, user)).limit(1);
+        if (student) {
+          [admin] = await db.select().from(adminsTable)
+            .where(eq(adminsTable.linkedId, student.id)).limit(1);
+          if (admin && admin.role !== "student") admin = undefined;
+        }
       }
     }
 
