@@ -77,8 +77,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       )}
 
       <aside className={cn(
-        "fixed inset-y-0 right-0 z-50 flex w-[260px] max-w-[85vw] flex-col bg-sidebar shadow-[2px_0_20px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-in-out md:translate-x-0",
-        mobileOpen ? "translate-x-0" : "translate-x-full md:translate-x-0"
+        "fixed inset-y-0 right-0 z-50 flex w-[260px] max-w-[85vw] flex-col bg-sidebar shadow-[2px_0_20px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-in-out md:!transform-none",
+        mobileOpen ? "[transform:translate3d(0,0,0)]" : "[transform:translate3d(100%,0,0)]"
       )}>
         <div className="flex items-center justify-between gap-3 border-b border-sidebar-border px-5 py-5">
           <p className="text-sm font-bold text-sidebar-foreground">نظام إدارة المدرسة</p>
