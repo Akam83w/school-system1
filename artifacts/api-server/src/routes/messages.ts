@@ -20,6 +20,15 @@ async function getStudentClass(studentId: number, schoolId: number) {
   return row;
 }
 
+router.get("/messages/mine", async (req, res): Promise<any> => {
+  const user = (req as any).user as AuthUser;
+  if (user.role !== "teacher" || !user.schoolId) return res.status(403).json({ error: "هذه القائمة للمعلم فقط" });
+  const rows = await db.select().from(schoolMessagesTable).where(and(
+    eq(schoolMessagesTable.schoolId, user.schoolId), eq(schoolMessagesTable.authorId, user.id)
+  )).orderBy(desc(schoolMessagesTable.createdAt));
+  res.json(rows);
+});
+
 router.post("/messages/public", async (req, res): Promise<any> => {
   const user = (req as any).user as AuthUser;
   if (!["admin", "teacher"].includes(user.role) || !user.schoolId) return res.status(403).json({ error: "ليس لديك صلاحية إرسال الإشعارات" });
