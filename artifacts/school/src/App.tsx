@@ -64,6 +64,7 @@ function Router() {
 function AuthenticatedRouter() {
   const { data: me, isLoading } = useGetMe();
   if (isLoading) return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">جاري التحقق من الصلاحيات...</div>;
+  if (!me) return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">تعذر التحقق من الحساب. أعد تسجيل الدخول.</div>;
   const role = (me as any)?.role;
   if (role === "student" || role === "parent") {
     return <Switch>
