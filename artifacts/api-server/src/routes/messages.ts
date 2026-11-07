@@ -107,7 +107,16 @@ router.patch("/messages/:id", async (req, res) => {
 
 router.get("/message-audit", requireAdmin, async (req, res) => {
   const user = (req as any).user as AuthUser;
-  const messages = await db.select().from(schoolMessagesTable).where(eq(schoolMessagesTable.schoolId, user.schoolId!)).orderBy(desc(schoolMessagesTable.createdAt));
+  const messages = await db.select({
+    id: schoolMessagesTable.id, audience: schoolMessagesTable.audience, classId: schoolMessagesTable.classId,
+    studentId: schoolMessagesTable.studentId, className: classesTable.name, studentName: studentsTable.fullName,
+    authorId: schoolMessagesTable.authorId, authorName: schoolMessagesTable.authorName, authorRole: schoolMessagesTable.authorRole,
+    template: schoolMessagesTable.template, title: schoolMessagesTable.title, body: schoolMessagesTable.body,
+    editedAt: schoolMessagesTable.editedAt, createdAt: schoolMessagesTable.createdAt,
+  }).from(schoolMessagesTable)
+    .leftJoin(classesTable, and(eq(schoolMessagesTable.classId, classesTable.id), eq(classesTable.schoolId, user.schoolId!)))
+    .leftJoin(studentsTable, and(eq(schoolMessagesTable.studentId, studentsTable.id), eq(studentsTable.schoolId, user.schoolId!)))
+    .where(eq(schoolMessagesTable.schoolId, user.schoolId!)).orderBy(desc(schoolMessagesTable.createdAt));
   const ids = messages.map(m => m.id);
   const versions = ids.length ? await db.select().from(schoolMessageVersionsTable).where(inArray(schoolMessageVersionsTable.messageId, ids)).orderBy(desc(schoolMessageVersionsTable.editedAt)) : [];
   res.json({ messages, versions });
