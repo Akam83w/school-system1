@@ -146,7 +146,7 @@ export default function StudentDetailPage({ id }: { id: number | string }) {
                 <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${student.status === "active" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
                   {student.status === "active" ? "فعال" : "غير فعال"}
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">{student.gender}</span>
+                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">{student.gender === "male" ? "ذكر" : student.gender === "female" ? "أنثى" : student.gender || "—"}</span>
               </div>
               <p className="text-xs text-muted-foreground font-mono mb-1">{student.studentCode}</p>
               {student.classId && (
