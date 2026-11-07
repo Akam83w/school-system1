@@ -21,8 +21,15 @@ export default function ClassDetailPage({ id }: { id: number | string }) {
   const [activeTab, setActiveTab] = useState<"students" | "attendance">("students");
   const [, navigate] = useLocation();
 
-  const { data: cls, isLoading: classLoading } = useGetClass(recordId, {
-    query: { queryKey: getGetClassQueryKey(recordId), enabled: Number.isFinite(recordId) && recordId > 0 },
+  const { data: cls, isLoading: classLoading, isError: classError, refetch: refetchClass } = useGetClass(recordId, {
+    query: {
+      queryKey: getGetClassQueryKey(recordId),
+      enabled: Number.isFinite(recordId) && recordId > 0,
+      retry: (failureCount, error: any) => {
+        const status = error?.status ?? error?.response?.status;
+        return failureCount < 2 && (status == null || status >= 500);
+      },
+    },
   });
 
   const { data: students, isLoading: studentsLoading } = useListStudents(
@@ -42,6 +49,20 @@ export default function ClassDetailPage({ id }: { id: number | string }) {
           <div className="h-8 w-64 bg-muted rounded-lg" />
           <div className="h-40 bg-muted rounded-xl" />
           <div className="h-64 bg-muted rounded-xl" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (classError) {
+    return (
+      <Layout>
+        <div className="text-center py-16" dir="rtl">
+          <p className="text-4xl mb-4">⚠️</p>
+          <p className="text-muted-foreground text-lg">تعذر تحميل بيانات الصف حالياً</p>
+          <p className="text-sm text-muted-foreground mt-2">قد يكون الاتصال بالخادم انقطع مؤقتاً. حاول مرة أخرى.</p>
+          <button onClick={() => refetchClass()} className="mt-4 px-4 py-2 rounded-lg bg-primary text-white text-sm">إعادة المحاولة</button>
+          <div><Link href="/classes" className="mt-4 inline-block text-primary hover:underline text-sm">العودة إلى الصفوف</Link></div>
         </div>
       </Layout>
     );
