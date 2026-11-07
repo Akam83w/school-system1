@@ -15,8 +15,9 @@ export default function ParentMessagesPage() {
   const isAdmin = (me as any)?.role === "admin";
   const [classes, setClasses] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
-  const [classId, setClassId] = useState("");
-  const [studentId, setStudentId] = useState("");
+  const initialQuery = new URLSearchParams(window.location.search);
+  const [classId, setClassId] = useState(initialQuery.get("classId") ?? "");
+  const [studentId, setStudentId] = useState(initialQuery.get("studentId") ?? "");
   const [mode, setMode] = useState<"public" | "private">("public");
   const [audience, setAudience] = useState<"school" | "class">("class");
   const [template, setTemplate] = useState("homework");
@@ -30,7 +31,7 @@ export default function ParentMessagesPage() {
   useEffect(() => { api("/api/classes").then(setClasses).catch(e => setError(e.message)); }, []);
   useEffect(() => {
     if (!classId) { setStudents([]); setStudentId(""); return; }
-    api(`/api/students?classId=${encodeURIComponent(classId)}`).then(rows => { setStudents(rows); setStudentId(""); }).catch(e => setError(e.message));
+    api(`/api/students?classId=${encodeURIComponent(classId)}`).then(rows => { setStudents(rows); setStudentId(current => current && rows.some((s: any) => String(s.id) === current) ? current : ""); }).catch(e => setError(e.message));
   }, [classId]);
   useEffect(() => {
     if (!studentId) { setConversation([]); return; }
