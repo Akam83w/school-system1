@@ -20,7 +20,7 @@ async function getStudentClass(studentId: number, schoolId: number) {
   return row;
 }
 
-router.post("/messages/public", async (req, res) => {
+router.post("/messages/public", async (req, res): Promise<any> => {
   const user = (req as any).user as AuthUser;
   if (!["admin", "teacher"].includes(user.role) || !user.schoolId) return res.status(403).json({ error: "ليس لديك صلاحية إرسال الإشعارات" });
   const { audience, classId, title, body, template } = req.body ?? {};
@@ -48,7 +48,7 @@ router.post("/messages/public", async (req, res) => {
   res.status(201).json(row);
 });
 
-router.post("/messages/private", async (req, res) => {
+router.post("/messages/private", async (req, res): Promise<any> => {
   const user = (req as any).user as AuthUser;
   if (!["admin", "teacher"].includes(user.role) || !user.schoolId) return res.status(403).json({ error: "ليس لديك صلاحية إرسال الرسائل" });
   const studentId = Number(req.body?.studentId);
@@ -68,7 +68,7 @@ router.post("/messages/private", async (req, res) => {
   res.status(201).json(row);
 });
 
-router.get("/messages/private/:studentId", async (req, res) => {
+router.get("/messages/private/:studentId", async (req, res): Promise<any> => {
   const user = (req as any).user as AuthUser;
   if (!["admin", "teacher"].includes(user.role) || !user.schoolId) return res.status(403).json({ error: "ليس لديك صلاحية الوصول" });
   const studentId = Number(req.params.studentId);
@@ -82,7 +82,7 @@ router.get("/messages/private/:studentId", async (req, res) => {
   res.json(rows);
 });
 
-router.patch("/messages/:id", async (req, res) => {
+router.patch("/messages/:id", async (req, res): Promise<any> => {
   const user = (req as any).user as AuthUser;
   if (user.role !== "teacher" || !user.schoolId) return res.status(403).json({ error: "تعديل الرسائل متاح للمعلم المرسل فقط" });
   const id = Number(req.params.id);
@@ -105,7 +105,7 @@ router.patch("/messages/:id", async (req, res) => {
   res.json(updated);
 });
 
-router.get("/message-audit", requireAdmin, async (req, res) => {
+router.get("/message-audit", requireAdmin, async (req, res): Promise<any> => {
   const user = (req as any).user as AuthUser;
   const messages = await db.select({
     id: schoolMessagesTable.id, audience: schoolMessagesTable.audience, classId: schoolMessagesTable.classId,
