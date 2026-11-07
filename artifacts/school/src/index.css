@@ -296,3 +296,12 @@
     @apply focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors;
   }
 }
+
+/* Keep wide data tables scrollable inside the page instead of widening the viewport. */
+main table {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
