@@ -12,13 +12,17 @@ type Role = "admin" | "teacher" | "student" | "parent";
 const ROLE_LABELS: Record<Role, string> = {
   admin: "مدير النظام",
   teacher: "معلم",
-  student: "طالب",\n  parent: "ولي أمر",
+  student: "طالب",
+  parent: "ولي أمر",
+  parent: "ولي أمر",
 };
 
 const ROLE_COLORS: Record<Role, string> = {
   admin: "bg-amber-100 text-amber-800 border-amber-200",
   teacher: "bg-blue-100 text-blue-800 border-blue-200",
-  student: "bg-emerald-100 text-emerald-800 border-emerald-200",\n  parent: "bg-violet-100 text-violet-800 border-violet-200",
+  student: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  parent: "bg-violet-100 text-violet-800 border-violet-200",
+  parent: "bg-violet-100 text-violet-800 border-violet-200",
 };
 
 const EMPTY_CREATE = { name: "", username: "", phone: "", password: "", role: "teacher" as Role, linkedId: "" };
@@ -146,14 +150,14 @@ function AdminUsersContent({ currentUserId }: { currentUserId?: number }) {
 
   const linkedOptions = createForm.role === "teacher"
     ? (teachers as any[]).map(t => ({ value: t.id, label: `${t.fullName} (${t.teacherCode ?? ""})` }))
-    : createForm.role === "student"
+    : ["student", "parent"].includes(createForm.role)
     ? (students as any[]).map(s => ({ value: s.id, label: `${s.fullName} (${s.studentCode ?? ""})` }))
     : [];
 
   const editLinkedOptions = editTarget
     ? editTarget.form.role === "teacher"
       ? (teachers as any[]).map(t => ({ value: t.id, label: `${t.fullName} (${t.teacherCode ?? ""})` }))
-      : editTarget.form.role === "student"
+      : ["student", "parent"].includes(editTarget.form.role)
       ? (students as any[]).map(s => ({ value: s.id, label: `${s.fullName} (${s.studentCode ?? ""})` }))
       : []
     : [];
@@ -225,7 +229,7 @@ function AdminUsersContent({ currentUserId }: { currentUserId?: number }) {
                     {u.linkedId
                       ? u.role === "teacher"
                         ? (teachers as any[]).find(t => t.id === u.linkedId)?.fullName ?? `#${u.linkedId}`
-                        : u.role === "student"
+                        : ["student", "parent"].includes(u.role)
                         ? (students as any[]).find(s => s.id === u.linkedId)?.fullName ?? `#${u.linkedId}`
                         : "—"
                       : <span className="text-amber-600 font-medium">{u.role !== "admin" ? "غير مربوط" : "—"}</span>
@@ -306,6 +310,7 @@ function AdminUsersContent({ currentUserId }: { currentUserId?: number }) {
                 <select name="role" value={createForm.role} onChange={handleCreateChange} className={selectCls} required>
                   <option value="teacher">معلم</option>
                   <option value="student">طالب</option>
+                  <option value="parent">ولي أمر</option>
                   <option value="admin">مدير النظام</option>
                 </select>
               </div>
