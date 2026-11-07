@@ -28,5 +28,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Build workspace
         run: pnpm build
+      - name: Build TypeScript project references
+        run: pnpm exec tsc -b lib/db lib/api-zod
       - name: Typecheck API server
         run: pnpm --filter @workspace/api-server run typecheck
