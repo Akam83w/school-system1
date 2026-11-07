@@ -14,8 +14,15 @@ export default function TeacherDetailPage({ id }: { id: number | string }) {
   const recordId = Number(id);
   const [activeTab, setActiveTab] = useState<"classes" | "subjects">("classes");
 
-  const { data: teacher, isLoading } = useGetTeacher(recordId, {
-    query: { queryKey: getGetTeacherQueryKey(recordId), enabled: Number.isFinite(recordId) && recordId > 0 },
+  const { data: teacher, isLoading, isError, refetch } = useGetTeacher(recordId, {
+    query: {
+      queryKey: getGetTeacherQueryKey(recordId),
+      enabled: Number.isFinite(recordId) && recordId > 0,
+      retry: (failureCount, error: any) => {
+        const status = error?.status ?? error?.response?.status;
+        return failureCount < 2 && (status == null || status >= 500);
+      },
+    },
   });
 
   const { data: allClasses } = useListClasses({
@@ -36,6 +43,20 @@ export default function TeacherDetailPage({ id }: { id: number | string }) {
           <div className="h-8 w-48 bg-muted rounded-lg" />
           <div className="h-44 bg-muted rounded-2xl" />
           <div className="h-64 bg-muted rounded-2xl" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Layout>
+        <div className="text-center py-16" dir="rtl">
+          <p className="text-4xl mb-4">⚠️</p>
+          <p className="text-muted-foreground text-lg">تعذر تحميل بيانات المعلم حالياً</p>
+          <p className="text-sm text-muted-foreground mt-2">قد يكون الاتصال بالخادم انقطع مؤقتاً. حاول مرة أخرى.</p>
+          <button onClick={() => refetch()} className="mt-4 px-4 py-2 rounded-lg bg-primary text-white text-sm">إعادة المحاولة</button>
+          <div><Link href="/teachers" className="mt-4 inline-block text-primary hover:underline text-sm">العودة إلى المعلمين</Link></div>
         </div>
       </Layout>
     );
