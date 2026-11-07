@@ -24,6 +24,7 @@ export default function ParentMessagesPage() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [conversation, setConversation] = useState<any[]>([]);
+  const [myMessages, setMyMessages] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -57,7 +58,7 @@ export default function ParentMessagesPage() {
     if (next == null || next.trim() === message.body) return;
     if (!next.trim()) { setError("نص الرسالة لا يمكن أن يكون فارغاً"); return; }
     setBusy(true); setError("");
-    try { await api(`/api/messages/${message.id}`, "PATCH", { body: next.trim() }); setSuccess("تم تعديل الرسالة وحفظ النسخة السابقة في السجل"); setConversation(await api(`/api/messages/private/${studentId}`)); }
+    try { await api(`/api/messages/${message.id}`, "PATCH", { body: next.trim() }); setSuccess("تم تعديل الرسالة وحفظ النسخة السابقة في السجل"); if (studentId) setConversation(await api(`/api/messages/private/${studentId}`)); setMyMessages(await api("/api/messages/mine")); }
     catch (e: any) { setError(e.message); }
     finally { setBusy(false); }
   }
@@ -83,6 +84,15 @@ export default function ParentMessagesPage() {
       </form>
       {error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       {success && <p className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700">{success}</p>}
+      {mode === "public" && !isAdmin && <section className="space-y-3 rounded-2xl border bg-white p-4">
+        <h2 className="font-bold">إشعاراتك السابقة</h2>
+        {myMessages.filter(m => m.audience !== "private").map(m => <article key={m.id} className="rounded-xl border p-3">
+          <div className="flex items-center justify-between gap-2"><strong className="text-sm">{m.title}</strong><span className="text-xs text-muted-foreground">{new Date(m.createdAt).toLocaleString("en-GB")}</span></div>
+          <p className="my-2 whitespace-pre-wrap text-sm leading-7">{m.body}</p>
+          <div className="flex items-center justify-between text-xs text-muted-foreground"><span>{m.audience === "class" ? "إشعار صف" : "إشعار عام"}{m.editedAt ? " · معدّلة" : ""}</span><button onClick={() => editMessage(m)} disabled={busy} className="text-primary underline">تعديل الرسالة</button></div>
+        </article>)}
+        {!myMessages.some(m => m.audience !== "private") && <p className="text-sm text-muted-foreground">لم ترسل إشعارات بعد</p>}
+      </section>}
       {mode === "private" && studentId && <section className="space-y-3 rounded-2xl border bg-white p-4">
         <h2 className="font-bold">محادثة خاصة — {selectedStudent?.fullName}</h2>
         {conversation.map(m => <article key={m.id} className="rounded-xl border p-3">
