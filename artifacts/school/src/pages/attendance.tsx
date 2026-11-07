@@ -110,9 +110,9 @@ export default function AttendancePage() {
 
   const allServerRecords = records ?? [];
   const serverRecords = statusFilter ? allServerRecords.filter(r => r.status === statusFilter) : allServerRecords;
-  const present = serverRecords.filter(r => r.status === "حاضر").length;
-  const absent = serverRecords.filter(r => r.status === "غائب").length;
-  const late = serverRecords.filter(r => r.status === "متأخر").length;
+  const present = allServerRecords.filter(r => r.status === "حاضر").length;
+  const absent = allServerRecords.filter(r => r.status === "غائب").length;
+  const late = allServerRecords.filter(r => r.status === "متأخر").length;
   const total = serverRecords.length + offlinePending.length;
 
   return (
