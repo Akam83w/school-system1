@@ -127,7 +127,7 @@ export default function DashboardPage() {
                   <YAxis allowDecimals={false} />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="ناجح" fill="#3b82f6" onClick={(data: any) => setSelectedSubject(data)} cursor="pointer" />
+                  <Bar dataKey="ناجح" fill="#3b82f6" onClick={(data: any) => setSelectedSubject(data?.payload ?? data)} cursor="pointer" />
                   <Bar dataKey="راسب" fill="#ef4444" onClick={(data: any) => setSelectedSubject(data)} cursor="pointer" />
                 </BarChart>
               </ResponsiveContainer>
