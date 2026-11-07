@@ -31,7 +31,6 @@ export default function AttendancePage() {
   const [yearFilter, setYearFilter] = useState(selectedYear);
   const [studentFilter, setStudentFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState(() => new URLSearchParams(window.location.search).get("status") === "absent" ? "غائب" : "");
-  const [statusFilter, setStatusFilter] = useState(() => new URLSearchParams(window.location.search).get("status") === "absent" ? "غائب" : "");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ studentId: "", classId: "", date: today, status: "حاضر", academicYear: selectedYear, notes: "" });
 
@@ -154,9 +153,6 @@ export default function AttendancePage() {
             <select value={classFilter} onChange={(e) => setClassFilter(e.target.value)} className={inputCls}>
               <option value="">جميع الصفوف</option>
               {(classes ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={inputCls}>
-              <option value="">كل الحالات</option><option value="غائب">الغائبون</option><option value="حاضر">الحاضرون</option><option value="متأخر">المتأخرون</option>
             </select>
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={inputCls}>
               <option value="">كل الحالات</option><option value="غائب">الغائبون</option><option value="حاضر">الحاضرون</option><option value="متأخر">المتأخرون</option>
