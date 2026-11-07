@@ -68,6 +68,6 @@ FOR EACH ROW EXECUTE FUNCTION prevent_school_message_version_mutation();
 
 ALTER TABLE school_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE school_message_versions ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON TABLE school_messages, school_message_versions FROM anon, authenticated;
+REVOKE ALL ON TABLE school_messages, school_message_versions FROM anon, authenticated, service_role;
 
 COMMIT;
