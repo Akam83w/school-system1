@@ -2,19 +2,20 @@ import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout";
 import { getToken } from "@/lib/auth";
 import { useGetMe } from "@workspace/api-client-react";
-import { Redirect } from "wouter";
 
 export default function MessageAuditPage() {
-  const { data: me } = useGetMe();
+  const { data: me, isLoading: meLoading } = useGetMe();
   const [data, setData] = useState<{ messages: any[]; versions: any[] }>({ messages: [], versions: [] });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   useEffect(() => {
+    if ((me as any)?.role !== "admin") return;
     fetch("/api/message-audit", { headers: { Authorization: `Bearer ${getToken() ?? ""}` } })
       .then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error || "تعذر تحميل السجل"); return d; })
       .then(setData).catch(e => setError(e.message)).finally(() => setLoading(false));
-  }, []);
-  if (me && (me as any).role !== "admin") return <Redirect to="/dashboard" />;
+  }, [me]);
+  if (meLoading) return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">جاري التحقق من الصلاحيات...</div>;
+  if ((me as any)?.role !== "admin") return <Layout><div dir="rtl" className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm font-bold text-amber-800">هذه الصفحة للمدير فقط</div></Layout>;
   const versionsByMessage = new Map<number, any[]>();
   data.versions.forEach(v => versionsByMessage.set(v.messageId, [...(versionsByMessage.get(v.messageId) ?? []), v]));
   return <Layout><div dir="rtl" className="space-y-5">
