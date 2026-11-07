@@ -27,15 +27,15 @@ router.post("/users", requireAuth, requireAdmin, async (req, res) => {
   if (String(name).trim().split(/\s+/).filter(Boolean).length < 3) {
     res.status(400).json({ error: "يجب أن يتكون الاسم من ثلاثة أسماء على الأقل" }); return;
   }
-  if (!["admin", "teacher", "student"].includes(String(role))) {
+  if (!["admin", "teacher", "student", "parent"].includes(String(role))) {
     res.status(400).json({ error: "الدور غير صالح" }); return;
   }
   if (typeof password !== "string" || password.length < 8) {
     res.status(400).json({ error: "يجب أن تكون كلمة المرور 8 أحرف على الأقل" }); return;
   }
-  if (["teacher", "student"].includes(String(role))) {
+  if (["teacher", "student", "parent"].includes(String(role))) {
     if (linkedId == null || !Number.isInteger(Number(linkedId)) || Number(linkedId) <= 0) {
-      res.status(400).json({ error: "يجب ربط حساب المعلم أو الطالب بسجله أولاً" }); return;
+      res.status(400).json({ error: "يجب ربط حساب المعلم أو الطالب أو ولي الأمر أو ولي الأمر بسجله أولاً" }); return;
     }
     const profileTable = role === "teacher" ? teachersTable : studentsTable;
     const [profile] = await db.select({ id: profileTable.id }).from(profileTable).where(and(
@@ -78,12 +78,12 @@ router.patch("/users/:id", requireAuth, requireAdmin, async (req, res) => {
   if (name !== undefined) updates.name = String(name).trim();
   if (email !== undefined) updates.email = email ? String(email).trim().toLowerCase() : null;
   if (role !== undefined) {
-    if (!["admin", "teacher", "student"].includes(String(role))) { res.status(400).json({ error: "الدور غير صالح" }); return; }
+    if (!["admin", "teacher", "student", "parent"].includes(String(role))) { res.status(400).json({ error: "الدور غير صالح" }); return; }
     updates.role = String(role);
   }
   if (linkedId !== undefined) {
     const nextRole = String(role ?? before.role);
-    if (["teacher", "student"].includes(nextRole)) {
+    if (["teacher", "student", "parent"].includes(nextRole)) {
       const profileTable = nextRole === "teacher" ? teachersTable : studentsTable;
       const [profile] = await db.select({ id: profileTable.id }).from(profileTable).where(and(
         eq(profileTable.id, Number(linkedId)), eq(profileTable.schoolId, caller.schoolId!)
