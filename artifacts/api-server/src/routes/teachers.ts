@@ -13,6 +13,11 @@ async function getNextCode(schoolId: number) {
 }
 router.get("/teachers", requireAuth, async (req, res) => {
   const user = (req as any).user as AuthUser;
+  if (user.role === "teacher") {
+    const [own] = await db.select().from(teachersTable).where(and(eq(teachersTable.id, user.linkedId ?? -1), eq(teachersTable.schoolId, user.schoolId!))).limit(1);
+    res.json(own ? [own] : []);
+    return;
+  }
   const term = String(req.query.search ?? "");
   const rows = await db.select().from(teachersTable).where(term
     ? and(eq(teachersTable.schoolId, user.schoolId!), ilike(teachersTable.fullName, `%${term}%`))
