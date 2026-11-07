@@ -28,7 +28,11 @@ import NotFound from "@/pages/not-found";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: false,
+      // Retry transient network and server failures; do not retry client errors such as 401/404.
+      retry: (failureCount, error: any) => {
+        const status = error?.status ?? error?.response?.status;
+        return failureCount < 2 && (status == null || status >= 500);
+      },
       staleTime: 60 * 1000,
       networkMode: "always",
     },
