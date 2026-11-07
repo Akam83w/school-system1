@@ -71,8 +71,8 @@ export default function ParentMessagesPage() {
     <div dir="rtl" className="mx-auto max-w-4xl space-y-5">
       <div><h1 className="text-2xl font-black">رسائل أولياء الأمور</h1><p className="mt-1 text-sm text-muted-foreground">الإشعارات الصفية والمحادثات الخاصة المسجلة</p></div>
       <div className="flex gap-2 rounded-xl bg-muted p-1">
-        <button onClick={() => setMode("public")} className={`flex-1 rounded-lg px-3 py-2 text-sm font-bold ${mode === "public" ? "bg-white shadow text-primary" : "text-muted-foreground"}`}>إشعار صف / مدرسة</button>
-        <button onClick={() => setMode("private")} className={`flex-1 rounded-lg px-3 py-2 text-sm font-bold ${mode === "private" ? "bg-white shadow text-primary" : "text-muted-foreground"}`}>رسالة خاصة لولي أمر</button>
+        <button onClick={() => { setMode("public"); setTemplate("homework"); }} className={`flex-1 rounded-lg px-3 py-2 text-sm font-bold ${mode === "public" ? "bg-white shadow text-primary" : "text-muted-foreground"}`}>إشعار صف / مدرسة</button>
+        <button onClick={() => { setMode("private"); setTemplate("general"); }} className={`flex-1 rounded-lg px-3 py-2 text-sm font-bold ${mode === "private" ? "bg-white shadow text-primary" : "text-muted-foreground"}`}>رسالة خاصة لولي أمر</button>
       </div>
       <form onSubmit={submit} className="space-y-4 rounded-2xl border bg-white p-4 sm:p-5">
         {mode === "public" && isAdmin && <label className="block text-sm font-semibold">المستلمون<select value={audience} onChange={e => setAudience(e.target.value as any)} className="mt-1 w-full rounded-xl border p-3"><option value="school">كل المدرسة</option><option value="class">صف محدد</option></select></label>}
