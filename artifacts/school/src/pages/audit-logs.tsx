@@ -52,6 +52,7 @@ export default function AuditLogsPage() {
   const { data: logs, isLoading, error } = useQuery({
     queryKey: ["audit-logs", filterAction, filterEntity],
     queryFn: () => fetchAuditLogs(filterAction || undefined, filterEntity || undefined),
+    enabled: (me as any)?.role === "admin",
   });
 
   if (meLoading) return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">جاري التحقق من الصلاحيات...</div>;
