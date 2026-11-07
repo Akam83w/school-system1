@@ -5,7 +5,6 @@ import { useGetMe } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Redirect } from "wouter";
 
 type Role = "admin" | "teacher" | "student" | "parent";
 
@@ -27,10 +26,11 @@ const EMPTY_CREATE = { name: "", username: "", phone: "", password: "", role: "t
 const EMPTY_EDIT = { name: "", role: "teacher" as Role, linkedId: "" };
 
 export default function AdminUsersPage() {
-  const { data: me } = useGetMe();
+  const { data: me, isLoading: meLoading } = useGetMe();
   const role = (me as any)?.role;
 
-  if (role && role !== "admin") return <Redirect to="/dashboard" />;
+  if (meLoading) return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">جاري التحقق من الصلاحيات...</div>;
+  if (role !== "admin") return <Layout><div dir="rtl" className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm font-bold text-amber-800">هذه الصفحة للمدير فقط</div></Layout>;
 
   return (
     <Layout>
