@@ -14,14 +14,12 @@ const ROLE_LABELS: Record<Role, string> = {
   teacher: "معلم",
   student: "طالب",
   parent: "ولي أمر",
-  parent: "ولي أمر",
 };
 
 const ROLE_COLORS: Record<Role, string> = {
   admin: "bg-amber-100 text-amber-800 border-amber-200",
   teacher: "bg-blue-100 text-blue-800 border-blue-200",
   student: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  parent: "bg-violet-100 text-violet-800 border-violet-200",
   parent: "bg-violet-100 text-violet-800 border-violet-200",
 };
 
