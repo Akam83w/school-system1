@@ -162,7 +162,8 @@ export default function GradesPage() {
               {isLoading ? "جاري التحميل..." : `عدد الدرجات المسجلة: ${totalCount}${offlinePending.length > 0 ? ` (${offlinePending.length} معلقة)` : ''}`}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button type="button" onClick={() => window.print()} className="px-3 py-2.5 rounded-xl border border-border bg-white text-sm font-semibold hover:bg-muted active:scale-[0.98] transition-all">طباعة / PDF</button>
             {!isOnline && (
               <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 text-xs font-semibold">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
