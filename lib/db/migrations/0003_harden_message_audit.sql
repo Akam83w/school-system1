@@ -1,5 +1,4 @@
 BEGIN;
-REVOKE ALL ON TABLE public.school_messages, public.school_message_versions FROM anon, authenticated, service_role;
 ALTER FUNCTION public.prevent_school_message_delete() SET search_path = pg_catalog;
 ALTER FUNCTION public.prevent_school_message_version_mutation() SET search_path = pg_catalog;
 CREATE INDEX IF NOT EXISTS school_messages_author_school_idx ON public.school_messages (author_id, school_id);
