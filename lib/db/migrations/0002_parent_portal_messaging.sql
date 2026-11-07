@@ -22,6 +22,13 @@ CREATE TABLE IF NOT EXISTS school_messages (
   )
 );
 
+-- Enforce that every target and sender belongs to the same school as the message.
+CREATE UNIQUE INDEX IF NOT EXISTS admins_id_school_unique ON admins (id, school_id);
+ALTER TABLE school_messages
+  ADD CONSTRAINT school_messages_class_school_fkey FOREIGN KEY (class_id, school_id) REFERENCES classes(id, school_id) ON DELETE RESTRICT,
+  ADD CONSTRAINT school_messages_student_school_fkey FOREIGN KEY (student_id, school_id) REFERENCES students(id, school_id) ON DELETE RESTRICT,
+  ADD CONSTRAINT school_messages_author_school_fkey FOREIGN KEY (author_id, school_id) REFERENCES admins(id, school_id) ON DELETE RESTRICT;
+
 CREATE INDEX IF NOT EXISTS school_messages_school_created_idx ON school_messages (school_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS school_messages_student_created_idx ON school_messages (student_id, created_at DESC) WHERE audience = 'private';
 CREATE INDEX IF NOT EXISTS school_messages_class_created_idx ON school_messages (class_id, created_at DESC);
