@@ -7,18 +7,18 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Redirect } from "wouter";
 
-type Role = "admin" | "teacher" | "student";
+type Role = "admin" | "teacher" | "student" | "parent";
 
 const ROLE_LABELS: Record<Role, string> = {
   admin: "مدير النظام",
   teacher: "معلم",
-  student: "طالب",
+  student: "طالب",\n  parent: "ولي أمر",
 };
 
 const ROLE_COLORS: Record<Role, string> = {
   admin: "bg-amber-100 text-amber-800 border-amber-200",
   teacher: "bg-blue-100 text-blue-800 border-blue-200",
-  student: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  student: "bg-emerald-100 text-emerald-800 border-emerald-200",\n  parent: "bg-violet-100 text-violet-800 border-violet-200",
 };
 
 const EMPTY_CREATE = { name: "", username: "", phone: "", password: "", role: "teacher" as Role, linkedId: "" };
@@ -165,7 +165,7 @@ function AdminUsersContent({ currentUserId }: { currentUserId?: number }) {
         <div>
           <h1 className="text-2xl font-black text-foreground">إدارة المستخدمين</h1>
           <p className="text-muted-foreground text-sm mt-0.5">
-            إنشاء وإدارة حسابات المعلمين والطلاب والمديرين — {(users as any[]).length} حساب مسجّل
+            إنشاء وإدارة حسابات المعلمين والطلاب وأولياء الأمور والمديرين — {(users as any[]).length} حساب مسجّل
           </p>
         </div>
         <button
@@ -186,7 +186,7 @@ function AdminUsersContent({ currentUserId }: { currentUserId?: number }) {
         </svg>
         <div className="text-sm text-blue-800">
           <span className="font-semibold">ملاحظة: </span>
-          تأكد من ربط حساب المعلم بسجل معلمه في قائمة المعلمين، وكذلك حساب الطالب بسجله. هذا الربط يحدد ما يراه كل مستخدم.
+          تأكد من ربط حساب المعلم بسجل معلمه في قائمة المعلمين، وكذلك حساب الطالب وولي الأمر بسجل الطالب المرتبط به. هذا الربط يحدد ما يراه كل مستخدم.
         </div>
       </div>
 
@@ -312,7 +312,7 @@ function AdminUsersContent({ currentUserId }: { currentUserId?: number }) {
               {createForm.role !== "admin" && (
                 <div>
                   <label className="block text-xs font-semibold mb-1.5">
-                    ربط بـ{createForm.role === "teacher" ? "معلم" : "طالب"} <span className="text-destructive">*</span>
+                    ربط بـ{createForm.role === "teacher" ? "معلم" : createForm.role === "parent" ? "طالب ولي الأمر" : "طالب"} <span className="text-destructive">*</span>
                   </label>
                   <select name="linkedId" value={createForm.linkedId} onChange={handleCreateChange} className={selectCls} required>
                     <option value="">— اختر السجل المرتبط —</option>
@@ -365,7 +365,7 @@ function AdminUsersContent({ currentUserId }: { currentUserId?: number }) {
               {editLinkedOptions.length > 0 && (
                 <div>
                   <label className="block text-xs font-semibold mb-1.5">
-                    ربط بـ{editTarget.form.role === "teacher" ? "معلم" : "طالب"}
+                    ربط بـ{editTarget.form.role === "teacher" ? "معلم" : editTarget.form.role === "parent" ? "طالب ولي الأمر" : "طالب"}
                   </label>
                   <select name="linkedId" value={editTarget.form.linkedId} onChange={handleEditChange} className={selectCls}>
                     <option value="">— بدون ربط —</option>
