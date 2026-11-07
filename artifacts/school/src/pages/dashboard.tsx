@@ -21,7 +21,7 @@ function safeArray<T>(data: unknown): T[] { return Array.isArray(data) ? data as
 function StatCard({ title, value, sub, icon, color, bg, href }: StatCardProps) {
   return (
     <Link href={href}>
-      <a className="block min-w-0 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+      <div className="block min-w-0 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
         <div className="h-full bg-white rounded-2xl border border-border p-4 sm:p-5 shadow-sm hover:shadow-md active:scale-[0.98] transition-all cursor-pointer">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
@@ -32,7 +32,7 @@ function StatCard({ title, value, sub, icon, color, bg, href }: StatCardProps) {
             <div className={`w-10 h-10 shrink-0 rounded-lg ${bg} flex items-center justify-center`}>{icon}</div>
           </div>
         </div>
-      </a>
+      </div>
     </Link>
   );
 }
