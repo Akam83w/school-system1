@@ -4,7 +4,7 @@ export interface RequestConfig {
   headers?: HeadersInit;
   data?: unknown;
   body?: BodyInit | null;
-  signal?: AbortSignal;
+  signal?: AbortSignal | null;
   [key: string]: unknown;
 }
 
