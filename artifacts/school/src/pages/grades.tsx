@@ -159,7 +159,7 @@ export default function GradesPage() {
           <div>
             <h1 className="text-2xl font-black text-foreground">سجل الدرجات</h1>
             <p className="text-muted-foreground text-sm mt-0.5">
-              {isLoading ? "جاري التحميل..." : `${totalCount} درجة مسجّلة${offlinePending.length > 0 ? ` (${offlinePending.length} معلقة)` : ''}`}
+              {isLoading ? "جاري التحميل..." : `عدد الدرجات المسجلة: ${totalCount}${offlinePending.length > 0 ? ` (${offlinePending.length} معلقة)` : ''}`}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -291,7 +291,7 @@ export default function GradesPage() {
               <div className="px-5 py-3.5 border-b border-border bg-muted/30 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-6 bg-primary rounded-full" />
-                  <span className="text-sm font-bold text-foreground">العام الدراسي: {year}</span>
+                  <span className="text-sm font-bold text-foreground">العام الدراسي: <bdi dir="ltr" className="whitespace-nowrap">{year}</bdi></span>
                   <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-lg">{yearGrades.length} سجل</span>
                 </div>
                 {avgStyle && avg !== null && (
@@ -315,7 +315,7 @@ export default function GradesPage() {
                       const style = getGradeStyle(pct);
                       return (
                         <tr key={g.id} className="hover:bg-muted/20 transition-colors">
-                          <td className="px-4 py-3 font-semibold">{g.studentName}</td>
+                          <td className="px-4 py-3 font-semibold min-w-[180px] whitespace-nowrap">{g.studentName}</td>
                           <td className="px-4 py-3 text-muted-foreground">{g.subjectName}</td>
                           <td className="px-4 py-3 text-muted-foreground text-xs">{g.className}</td>
                           <td className="px-4 py-3 font-mono">
