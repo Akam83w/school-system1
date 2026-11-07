@@ -320,5 +320,5 @@ main, main > *, main section, main article { min-width: 0; }
   main { overflow: visible !important; width: 100% !important; max-width: none !important; padding: 0 !important; }
   main table { display: table !important; width: 100% !important; min-width: 0 !important; max-width: none !important; overflow: visible !important; font-size: 10pt; }
   main tr { break-inside: avoid; }
-  main section, main article, main > div { break-inside: avoid; }
+  main section, main article { break-inside: avoid; }
 }
