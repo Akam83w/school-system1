@@ -292,7 +292,7 @@ function AdminUsersContent({ currentUserId }: { currentUserId?: number }) {
                 <label className="block text-xs font-semibold mb-1.5">كلمة المرور <span className="text-destructive">*</span></label>
                 <div className="relative">
                   <input type={showPass ? "text" : "password"} name="password" value={createForm.password} onChange={handleCreateChange}
-                    className={`${inputCls} pl-9`} placeholder="6 أحرف على الأقل" required minLength={6} />
+                    className={`${inputCls} pl-9`} placeholder="8 أحرف على الأقل" required minLength={8} />
                   <button type="button" onClick={() => setShowPass(!showPass)} tabIndex={-1}
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                     <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2}>
