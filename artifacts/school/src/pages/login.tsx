@@ -5,7 +5,7 @@ import { setToken } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
-type LoginRole = "admin" | "teacher" | "student";
+type LoginRole = "admin" | "teacher" | "student" | "parent";
 
 const ROLE_CONFIG: Record<
   LoginRole,
@@ -69,7 +69,7 @@ export default function LoginPage() {
     mutation: {
       onSuccess: (data) => {
         setToken(data.token);
-        window.location.href = "/dashboard";
+        window.location.href = ["student", "parent"].includes(data.admin.role) ? "/portal" : "/dashboard";
       },
       onError: (e: any) => {
         const msg = extractErrorMessage(e);
@@ -154,8 +154,8 @@ export default function LoginPage() {
               <p className="text-muted-foreground text-sm mt-1">سجّل دخولك للمتابعة</p>
             </div>
 
-            <div className="grid grid-cols-3 gap-1.5 p-1 bg-muted/50 rounded-xl mb-5">
-              {(["admin", "teacher", "student"] as LoginRole[]).map((r) => (
+            <div className="grid grid-cols-4 gap-1.5 p-1 bg-muted/50 rounded-xl mb-5">
+              {(["admin", "teacher", "student", "parent"] as LoginRole[]).map((r) => (
                 <button
                   key={r}
                   type="button"
