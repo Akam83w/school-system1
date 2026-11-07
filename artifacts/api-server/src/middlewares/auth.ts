@@ -34,7 +34,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 export function requireAdmin(req: Request, res: Response, next: NextFunction): void {
   const user = (req as any).user as AuthUser | undefined;
   if (!user || user.role !== "admin" || !user.schoolId) {
-    res.status(403).json({ error: "هذه الصلاحية لمدير المدرسة فقط" }); return;
+    res.status(403).json({ error: "هذه الصفحة للمدير فقط" }); return;
   }
   next();
 }
