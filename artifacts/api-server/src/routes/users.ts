@@ -35,7 +35,7 @@ router.post("/users", requireAuth, requireAdmin, async (req, res) => {
   }
   if (["teacher", "student", "parent"].includes(String(role))) {
     if (linkedId == null || !Number.isInteger(Number(linkedId)) || Number(linkedId) <= 0) {
-      res.status(400).json({ error: "يجب ربط حساب المعلم أو الطالب أو ولي الأمر أو ولي الأمر بسجله أولاً" }); return;
+      res.status(400).json({ error: "يجب ربط حساب المعلم أو الطالب أو ولي الأمر بسجله أولاً" }); return;
     }
     const profileTable = role === "teacher" ? teachersTable : studentsTable;
     const [profile] = await db.select({ id: profileTable.id }).from(profileTable).where(and(
