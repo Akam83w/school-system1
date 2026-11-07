@@ -44,7 +44,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { data: me } = useGetMe();
   const { isOnline, pendingCount, isSyncing } = useNetworkStatus();
 
-  const role = (me as any)?.role ?? "admin";
+  const role = (me as any)?.role ?? "";
   const visibleNavItems = navItems.filter(item => {
     if (["/audit-logs", "/users", "/message-audit"].includes(item.href)) return role === "admin";
     if (item.href === "/messages") return ["admin", "teacher"].includes(role);
