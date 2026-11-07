@@ -38,6 +38,9 @@ export default function ParentMessagesPage() {
     if (!studentId) { setConversation([]); return; }
     api(`/api/messages/private/${studentId}`).then(setConversation).catch(e => setError(e.message));
   }, [studentId, success]);
+  useEffect(() => {
+    if ((me as any)?.role === "teacher") api("/api/messages/mine").then(setMyMessages).catch(e => setError(e.message));
+  }, [me, success]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault(); setBusy(true); setError(""); setSuccess("");
@@ -98,7 +101,7 @@ export default function ParentMessagesPage() {
         {conversation.map(m => <article key={m.id} className="rounded-xl border p-3">
           <div className="flex items-center justify-between gap-2"><strong className="text-sm">{m.title}</strong><span className="text-xs text-muted-foreground">{new Date(m.createdAt).toLocaleString("en-GB")}</span></div>
           <p className="my-2 whitespace-pre-wrap text-sm leading-7">{m.body}</p>
-          <div className="flex items-center justify-between text-xs text-muted-foreground"><span>{m.authorName}{m.editedAt ? " · معدّلة" : ""}</span>{m.authorId === (me as any)?.id && <button onClick={() => editMessage(m)} disabled={busy} className="text-primary underline">تعديل الرسالة</button>}</div>
+          <div className="flex items-center justify-between text-xs text-muted-foreground"><span>{m.authorName}{m.editedAt ? " · معدّلة" : ""}</span>{(me as any)?.role === "teacher" && m.authorId === (me as any)?.id && <button onClick={() => editMessage(m)} disabled={busy} className="text-primary underline">تعديل الرسالة</button>}</div>
         </article>)}
         {!conversation.length && <p className="text-sm text-muted-foreground">لا توجد رسائل سابقة لهذا الطالب</p>}
       </section>}
