@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { OfflineBanner } from "@/components/offline-banner";
 import { isAuthenticated } from "@/lib/auth";
+import { useGetMe } from "@workspace/api-client-react";
 
 import { AcademicYearProvider } from "@/contexts/AcademicYearContext";
 import LoginPage from "@/pages/login";
@@ -24,6 +25,9 @@ import SubjectsPage from "@/pages/subjects";
 import AttendancePage from "@/pages/attendance";
 import GradesPage from "@/pages/grades";
 import NotFound from "@/pages/not-found";
+import PortalPage from "@/pages/portal";
+import ParentMessagesPage from "@/pages/messages";
+import MessageAuditPage from "@/pages/message-audit";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -54,7 +58,19 @@ function Router() {
       </Switch>
     );
   }
+  return <AuthenticatedRouter />;
+}
 
+function AuthenticatedRouter() {
+  const { data: me, isLoading } = useGetMe();
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">جاري التحقق من الصلاحيات...</div>;
+  const role = (me as any)?.role;
+  if (role === "student" || role === "parent") {
+    return <Switch>
+      <Route path="/portal" component={PortalPage} />
+      <Route><Redirect to="/portal" /></Route>
+    </Switch>;
+  }
   return (
     <Switch>
       <Route path="/login">
@@ -73,6 +89,8 @@ function Router() {
       <Route path="/grades" component={GradesPage} />
       <Route path="/audit-logs" component={AuditLogsPage} />
       <Route path="/announcements" component={AnnouncementsPage} />
+      <Route path="/messages" component={ParentMessagesPage} />
+      <Route path="/message-audit" component={MessageAuditPage} />
       <Route path="/users" component={AdminUsersPage} />
       <Route path="/" component={DashboardPage} />
       <Route component={NotFound} />
