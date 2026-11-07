@@ -54,10 +54,14 @@ router.post("/grades", requireAuth, requireTeacherOrAdmin, async (req, res) => {
   await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "create", entity: "grade", entityId: row.id, afterData: row });
   res.status(201).json(row);
 });
-router.patch("/grades/:id", requireAuth, requireAdmin, async (req, res) => {
+router.patch("/grades/:id", requireAuth, requireTeacherOrAdmin, async (req, res) => {
   const user = (req as any).user as AuthUser; const id = Number(req.params.id);
   const [before] = await db.select().from(gradesTable).where(and(eq(gradesTable.id, id), eq(gradesTable.schoolId, user.schoolId!))).limit(1);
   if (!before) { res.status(404).json({ error: "الدرجة غير موجودة" }); return; }
+  if (user.role === "teacher") {
+    const [assigned] = await db.select({ id: classesTable.id }).from(classesTable).where(and(eq(classesTable.id, before.classId), eq(classesTable.teacherId, user.linkedId ?? -1), eq(classesTable.schoolId, user.schoolId!))).limit(1);
+    if (!assigned) { res.status(403).json({ error: "يمكنك تعديل درجات صفوفك فقط" }); return; }
+  }
   const updates: any = {};
   for (const key of ["examType", "examDate", "notes"]) if (req.body?.[key] !== undefined) updates[key] = req.body[key];
   if (req.body?.score !== undefined) updates.score = String(req.body.score);
