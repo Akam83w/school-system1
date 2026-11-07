@@ -32,6 +32,9 @@ ALTER TABLE school_messages
 CREATE INDEX IF NOT EXISTS school_messages_school_created_idx ON school_messages (school_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS school_messages_student_created_idx ON school_messages (student_id, created_at DESC) WHERE audience = 'private';
 CREATE INDEX IF NOT EXISTS school_messages_class_created_idx ON school_messages (class_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS school_messages_author_school_idx ON school_messages (author_id, school_id);
+CREATE INDEX IF NOT EXISTS school_messages_class_school_idx ON school_messages (class_id, school_id);
+CREATE INDEX IF NOT EXISTS school_messages_student_school_idx ON school_messages (student_id, school_id);
 
 CREATE TABLE IF NOT EXISTS school_message_versions (
   id serial PRIMARY KEY,
@@ -42,9 +45,10 @@ CREATE TABLE IF NOT EXISTS school_message_versions (
   edited_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS school_message_versions_message_idx ON school_message_versions (message_id, edited_at DESC);
+CREATE INDEX IF NOT EXISTS school_message_versions_editor_idx ON school_message_versions (edited_by);
 
 -- Append-only message history: no account, including a school manager, can delete a message or alter a stored version.
-CREATE OR REPLACE FUNCTION prevent_school_message_delete() RETURNS trigger LANGUAGE plpgsql AS $$
+CREATE OR REPLACE FUNCTION prevent_school_message_delete() RETURNS trigger LANGUAGE plpgsql SET search_path = pg_catalog AS $
 BEGIN
   RAISE EXCEPTION 'School messages are append-only and cannot be deleted';
 END;
