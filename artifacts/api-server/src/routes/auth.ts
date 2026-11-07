@@ -51,7 +51,7 @@ router.post("/auth/login", async (req: any, res: any) => {
     const user = (username || identifier || "").toString().trim();
     const requestedRole = (role || "admin").toString().trim().toLowerCase();
     if (!user || typeof password !== "string" || !password) return res.status(400).json({ error: "أدخل اسم المستخدم وكلمة المرور" });
-    if (!["admin", "teacher", "student"].includes(requestedRole)) return res.status(400).json({ error: "نوع الحساب غير صالح" });
+    if (!["admin", "teacher", "student", "parent"].includes(requestedRole)) return res.status(400).json({ error: "نوع الحساب غير صالح" });
 
     let account: any;
     [account] = await db.select().from(adminsTable)

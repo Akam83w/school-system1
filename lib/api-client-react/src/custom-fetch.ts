@@ -1,10 +1,10 @@
 export interface RequestConfig {
   url?: string;
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-  headers?: Record<string, string>;
+  headers?: HeadersInit;
   data?: unknown;
   body?: BodyInit | null;
-  signal?: AbortSignal;
+  signal?: AbortSignal | null;
   [key: string]: unknown;
 }
 
@@ -42,20 +42,18 @@ export class ApiError extends Error {
 export const customFetch = async <T>(url: string, config: RequestConfig): Promise<T> => {
   const fullUrl = `${_baseUrl || ""}${url}`;
 
-  const headers: Record<string, string> = {
-    ...(config.headers as Record<string, string> | undefined),
-  };
+  const headers = new Headers(config.headers);
 
   // Attach JWT when available (required for all protected routes)
   const token = _authTokenGetter?.() ?? null;
   if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+    headers.set("Authorization", `Bearer ${token}`);
   }
 
   // Only set Content-Type when we actually send a body
   const hasBody = config.data !== undefined || (config.body !== undefined && config.body !== null);
-  if (hasBody && !headers["Content-Type"] && !headers["content-type"]) {
-    headers["Content-Type"] = "application/json";
+  if (hasBody && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
   }
 
   let body: BodyInit | undefined | null;

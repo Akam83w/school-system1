@@ -30,6 +30,8 @@ const navItems = [
   { href: "/attendance", label: "الحضور والغياب", Icon: AttendanceIcon },
   { href: "/grades", label: "سجل الدرجات", Icon: GradesIcon },
   { href: "/announcements", label: "الإعلانات", Icon: AnnouncementsIcon },
+  { href: "/messages", label: "رسائل أولياء الأمور", Icon: AnnouncementsIcon },
+  { href: "/message-audit", label: "سجل الرسائل", Icon: AuditIcon },
   { href: "/audit-logs", label: "سجل الأحداث", Icon: AuditIcon },
   { href: "/users", label: "إدارة المستخدمين", Icon: UsersIcon },
 ];
@@ -42,6 +44,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { data: me } = useGetMe();
   const { isOnline, pendingCount, isSyncing } = useNetworkStatus();
 
+  const role = (me as any)?.role ?? "";
+  const visibleNavItems = navItems.filter(item => {
+    if (["/audit-logs", "/users", "/message-audit"].includes(item.href)) return role === "admin";
+    if (item.href === "/messages") return ["admin", "teacher"].includes(role);
+    return true;
+  });
   const currentName = (me as any)?.name ?? "مدير النظام";
   const initials = "مد";
 
@@ -92,7 +100,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </button>
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-          {navItems.map(({ href, label, Icon }) => (
+          {visibleNavItems.map(({ href, label, Icon }) => (
             <Link key={href} href={href}>
               <div
                 onClick={() => setMobileOpen(false)}

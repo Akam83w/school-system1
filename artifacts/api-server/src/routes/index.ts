@@ -11,6 +11,8 @@ import gradesRouter from "./grades";
 import dashboardRouter from "./dashboard";
 import auditLogsRouter from "./audit-logs";
 import announcementsRouter from "./announcements";
+import portalRouter from "./portal";
+import messagesRouter from "./messages";
 import academicYearsRouter from "./academic-years";
 import { requireAuth } from "../middlewares/auth";
 import { logger } from "../lib/logger";
@@ -55,6 +57,17 @@ router.use((req: Request, res: Response, next: NextFunction) => {
    AUTHENTICATED ROUTES
    (All requests below this point MUST have valid JWT token)
    ========================= */
+// Portal accounts are limited to the dedicated student/parent endpoints above all staff APIs.
+router.use(portalRouter);
+router.use((req: Request, res: Response, next: NextFunction) => {
+  const user = (req as any).user;
+  if (user && ["student", "parent"].includes(user.role)) {
+    res.status(403).json({ error: "هذه الصفحة للمدير أو المعلم فقط" });
+    return;
+  }
+  next();
+});
+router.use(messagesRouter);
 router.use(usersRouter);
 router.use(studentsRouter);
 router.use(teachersRouter);

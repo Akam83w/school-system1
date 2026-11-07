@@ -45,10 +45,14 @@ router.post("/attendance", requireAuth, requireTeacherOrAdmin, async (req, res) 
   await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "create", entity: "attendance", entityId: row.id, afterData: row });
   res.status(201).json(row);
 });
-router.patch("/attendance/:id", requireAuth, requireAdmin, async (req, res) => {
+router.patch("/attendance/:id", requireAuth, requireTeacherOrAdmin, async (req, res) => {
   const user = (req as any).user as AuthUser; const id = Number(req.params.id);
   const [before] = await db.select().from(attendanceTable).where(and(eq(attendanceTable.id, id), eq(attendanceTable.schoolId, user.schoolId!))).limit(1);
   if (!before) { res.status(404).json({ error: "السجل غير موجود" }); return; }
+  if (user.role === "teacher") {
+    const [assigned] = await db.select({ id: classesTable.id }).from(classesTable).where(and(eq(classesTable.id, before.classId), eq(classesTable.teacherId, user.linkedId ?? -1), eq(classesTable.schoolId, user.schoolId!))).limit(1);
+    if (!assigned) { res.status(403).json({ error: "يمكنك تعديل حضور صفوفك فقط" }); return; }
+  }
   const updates: any = {}; if (req.body?.status !== undefined) updates.status = req.body.status; if (req.body?.notes !== undefined) updates.notes = req.body.notes;
   const [row] = await db.update(attendanceTable).set(updates).where(and(eq(attendanceTable.id, id), eq(attendanceTable.schoolId, user.schoolId!))).returning();
   await logAudit({ userId: user.id, userName: user.name, userPhone: user.phone, action: "update", entity: "attendance", entityId: id, beforeData: before, afterData: row });

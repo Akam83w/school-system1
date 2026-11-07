@@ -149,6 +149,7 @@ export default function StudentDetailPage({ id }: { id: number | string }) {
                 <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">{student.gender === "male" ? "ذكر" : student.gender === "female" ? "أنثى" : student.gender || "—"}</span>
               </div>
               <p className="text-xs text-muted-foreground font-mono mb-1">{student.studentCode}</p>
+              {student.classId && <Link href={`/messages?studentId=${student.id}&classId=${student.classId}`} className="inline-flex items-center rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/15">مراسلة ولي الأمر</Link>}
               {student.classId && (
                 <Link href={`/classes/${student.classId}`} className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline font-medium">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

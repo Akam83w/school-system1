@@ -32,3 +32,5 @@ jobs:
         run: pnpm exec tsc -b lib/db lib/api-zod
       - name: Typecheck API server
         run: pnpm --filter @workspace/api-server run typecheck
+      - name: Typecheck school frontend
+        run: pnpm --filter @workspace/school run typecheck

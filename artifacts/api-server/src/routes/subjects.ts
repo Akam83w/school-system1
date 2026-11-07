@@ -17,7 +17,9 @@ router.get("/subjects", requireAuth, async (req, res) => {
     .from(subjectsTable)
     .leftJoin(teachersTable, and(eq(subjectsTable.teacherId, teachersTable.id), eq(teachersTable.schoolId, user.schoolId!)))
     .leftJoin(classesTable, and(eq(subjectsTable.classId, classesTable.id), eq(classesTable.schoolId, user.schoolId!)))
-    .where(eq(subjectsTable.schoolId, user.schoolId!));
+    .where(user.role === "teacher"
+      ? and(eq(subjectsTable.schoolId, user.schoolId!), eq(subjectsTable.teacherId, user.linkedId ?? -1))
+      : eq(subjectsTable.schoolId, user.schoolId!));
   res.json(rows.map(r => ({ ...r, teacherName: r.teacherName ?? "", className: r.className ?? "" })));
 });
 router.post("/subjects", requireAuth, requireAdmin, async (req, res) => {
