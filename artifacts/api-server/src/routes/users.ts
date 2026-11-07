@@ -81,14 +81,24 @@ router.patch("/users/:id", requireAuth, requireAdmin, async (req, res) => {
     if (!["admin", "teacher", "student", "parent"].includes(String(role))) { res.status(400).json({ error: "الدور غير صالح" }); return; }
     updates.role = String(role);
   }
+  if (role !== undefined && ["teacher", "student", "parent"].includes(String(role)) && linkedId === undefined) {
+    res.status(400).json({ error: "حدد سجل المعلم أو الطالب المرتبط بالحساب" }); return;
+  }
   if (linkedId !== undefined) {
     const nextRole = String(role ?? before.role);
     if (["teacher", "student", "parent"].includes(nextRole)) {
       const profileTable = nextRole === "teacher" ? teachersTable : studentsTable;
+      const linkedNumber = Number(linkedId);
       const [profile] = await db.select({ id: profileTable.id }).from(profileTable).where(and(
-        eq(profileTable.id, Number(linkedId)), eq(profileTable.schoolId, caller.schoolId!)
+        eq(profileTable.id, linkedNumber), eq(profileTable.schoolId, caller.schoolId!)
       )).limit(1);
       if (!profile) { res.status(400).json({ error: "السجل المرتبط يجب أن يكون من المدرسة نفسها" }); return; }
+      if (nextRole === "parent") {
+        const [duplicate] = await db.select({ id: adminsTable.id }).from(adminsTable).where(and(
+          eq(adminsTable.linkedId, linkedNumber), eq(adminsTable.role, "parent"), eq(adminsTable.schoolId, caller.schoolId!)
+        )).limit(1);
+        if (duplicate && duplicate.id !== targetId) { res.status(409).json({ error: "هذا الطالب لديه حساب ولي أمر بالفعل" }); return; }
+      }
     }
     updates.linkedId = linkedId != null && linkedId !== "" ? Number(linkedId) : null;
   }
