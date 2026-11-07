@@ -42,9 +42,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { data: me } = useGetMe();
   const { isOnline, pendingCount, isSyncing } = useNetworkStatus();
 
-  // إجبار النظام على التعامل كـ "مدير" لعرض كل شيء
   const currentName = (me as any)?.name ?? "مدير النظام";
   const initials = "مد";
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileOpen]);
 
   function handleLogout() {
     logoutMutation.mutate();
@@ -54,36 +66,71 @@ export function Layout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-background font-sans" dir="rtl">
-      <aside className="fixed inset-y-0 right-0 z-50 w-[260px] bg-sidebar flex flex-col shadow-[2px_0_20px_rgba(0,0,0,0.1)]">
-        <div className="flex items-center gap-3 px-5 py-5 border-b border-sidebar-border">
-          <p className="text-sidebar-foreground font-bold text-sm">نظام إدارة المدرسة</p>
+    <div className="flex min-h-screen w-full min-w-0 overflow-x-hidden bg-background font-sans" dir="rtl">
+      {mobileOpen && (
+        <button
+          type="button"
+          aria-label="إغلاق القائمة"
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-[1px] md:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      <aside className={cn(
+        "fixed inset-y-0 right-0 z-50 flex w-[260px] max-w-[85vw] flex-col bg-sidebar shadow-[2px_0_20px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-in-out md:translate-x-0",
+        mobileOpen ? "translate-x-0" : "translate-x-full md:translate-x-0"
+      )}>
+        <div className="flex items-center justify-between gap-3 border-b border-sidebar-border px-5 py-5">
+          <p className="text-sm font-bold text-sidebar-foreground">نظام إدارة المدرسة</p>
+          <button
+            type="button"
+            aria-label="إغلاق القائمة"
+            className="rounded-lg p-2 text-sidebar-foreground hover:bg-sidebar-accent md:hidden"
+            onClick={() => setMobileOpen(false)}
+          >
+            <CloseIcon />
+          </button>
         </div>
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {navItems.map(({ href, label, Icon }) => (
             <Link key={href} href={href}>
-              <div className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all", location.startsWith(href) ? "bg-primary/10 text-primary" : "text-sidebar-foreground/60 hover:bg-sidebar-accent")}>
+              <div
+                onClick={() => setMobileOpen(false)}
+                className={cn("flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition-all", location.startsWith(href) ? "bg-primary/10 text-primary" : "text-sidebar-foreground/60 hover:bg-sidebar-accent")}
+              >
                 <Icon />
                 <span>{label}</span>
               </div>
             </Link>
           ))}
         </nav>
-        <div className="px-3 py-4 border-t">
-          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-sidebar-foreground/60 hover:bg-red-50 hover:text-red-600">
+        <div className="border-t px-3 py-4">
+          <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sidebar-foreground/60 hover:bg-red-50 hover:text-red-600">
             <LogoutIcon /> <span>تسجيل الخروج</span>
           </button>
         </div>
       </aside>
-      <div className="flex-1 md:mr-[260px] flex flex-col min-h-screen">
-        <header className="sticky top-0 z-30 bg-white border-b px-6 h-14 flex items-center justify-between">
-           <span className="font-bold">لوحة التحكم</span>
-           <div className="flex gap-4 items-center">
-              <AcademicYearSelector />
-              <span>{currentName}</span>
-           </div>
+
+      <div className="flex min-h-screen w-full min-w-0 flex-1 flex-col overflow-x-hidden md:mr-[260px]">
+        <header className="sticky top-0 z-30 flex h-14 w-full min-w-0 items-center justify-between gap-3 border-b bg-white px-3 sm:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              aria-label="فتح القائمة"
+              aria-expanded={mobileOpen}
+              className="rounded-lg p-2 text-foreground hover:bg-muted md:hidden"
+              onClick={() => setMobileOpen(true)}
+            >
+              <MenuIcon />
+            </button>
+            <span className="truncate font-bold">لوحة التحكم</span>
+          </div>
+          <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+            <AcademicYearSelector />
+            <span className="max-w-[100px] truncate sm:max-w-none">{currentName}</span>
+          </div>
         </header>
-        <main className="flex-1 p-6">{children}</main>
+        <main className="min-h-0 w-full min-w-0 flex-1 overflow-x-hidden p-3 sm:p-6">{children}</main>
       </div>
     </div>
   );
