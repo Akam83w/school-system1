@@ -175,7 +175,7 @@ export default function StudentDetailPage({ id }: { id: number | string }) {
               )}
               <div className="bg-white rounded-xl border border-border px-4 py-3 text-center min-w-[72px] shadow-sm">
                 <p className="text-2xl font-bold text-foreground">{(allGrades ?? []).length}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">إجمالي الدرجات</p>
+                <p className="text-xs text-muted-foreground mt-0.5">عدد الدرجات المسجلة</p>
               </div>
             </div>
           </div>
@@ -212,7 +212,7 @@ export default function StudentDetailPage({ id }: { id: number | string }) {
                   onClick={() => setYearFilter(y)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${yearFilter === y ? "bg-primary text-white shadow-sm" : "bg-muted/50 text-muted-foreground hover:bg-muted"}`}
                 >
-                  {y}
+                  <bdi dir="ltr" className="whitespace-nowrap">{y}</bdi>
                 </button>
               ))}
             </div>

@@ -30,6 +30,7 @@ export default function AttendancePage() {
   const [classFilter, setClassFilter] = useState("");
   const [yearFilter, setYearFilter] = useState(selectedYear);
   const [studentFilter, setStudentFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState(() => new URLSearchParams(window.location.search).get("status") === "absent" ? "غائب" : "");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ studentId: "", classId: "", date: today, status: "حاضر", academicYear: selectedYear, notes: "" });
 
@@ -107,10 +108,11 @@ export default function AttendancePage() {
     }
   }
 
-  const serverRecords = records ?? [];
-  const present = serverRecords.filter(r => r.status === "حاضر").length;
-  const absent = serverRecords.filter(r => r.status === "غائب").length;
-  const late = serverRecords.filter(r => r.status === "متأخر").length;
+  const allServerRecords = records ?? [];
+  const serverRecords = statusFilter ? allServerRecords.filter(r => r.status === statusFilter) : allServerRecords;
+  const present = allServerRecords.filter(r => r.status === "حاضر").length;
+  const absent = allServerRecords.filter(r => r.status === "غائب").length;
+  const late = allServerRecords.filter(r => r.status === "متأخر").length;
   const total = serverRecords.length + offlinePending.length;
 
   return (
@@ -152,12 +154,15 @@ export default function AttendancePage() {
               <option value="">جميع الصفوف</option>
               {(classes ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={inputCls}>
+              <option value="">كل الحالات</option><option value="غائب">الغائبون</option><option value="حاضر">الحاضرون</option><option value="متأخر">المتأخرون</option>
+            </select>
             <select value={studentFilter} onChange={(e) => setStudentFilter(e.target.value)} className={inputCls}>
               <option value="">جميع الطلاب</option>
               {(students ?? []).map((s) => <option key={s.id} value={s.id}>{s.fullName}</option>)}
             </select>
-            {(dateFilter !== today || classFilter || studentFilter || yearFilter !== selectedYear) && (
-              <button onClick={() => { setDateFilter(today); setClassFilter(""); setStudentFilter(""); setYearFilter(selectedYear); }}
+            {(dateFilter !== today || classFilter || studentFilter || statusFilter || yearFilter !== selectedYear) && (
+              <button onClick={() => { setDateFilter(today); setClassFilter(""); setStudentFilter(""); setStatusFilter(""); setYearFilter(selectedYear); }}
                 className="text-xs text-muted-foreground hover:text-foreground underline">إعادة تعيين</button>
             )}
           </div>

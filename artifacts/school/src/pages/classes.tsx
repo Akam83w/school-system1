@@ -285,7 +285,7 @@ export default function ClassesPage() {
                           aria-label={`عرض تفاصيل ${c.name}`}
                         />
                         <div className="relative z-10 p-3 pointer-events-none">
-                          <div className={`text-center font-black text-sm leading-tight mb-2 ${cols.header}`}>
+                          <div className={`text-center font-black text-sm leading-tight mb-2 whitespace-normal break-words [overflow-wrap:anywhere] ${cols.header}`}>
                             {c.name}
                           </div>
                           <p className="text-center text-xs text-muted-foreground truncate mb-2">
