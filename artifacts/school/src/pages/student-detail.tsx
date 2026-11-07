@@ -175,7 +175,7 @@ export default function StudentDetailPage({ id }: { id: number | string }) {
               )}
               <div className="bg-white rounded-xl border border-border px-4 py-3 text-center min-w-[72px] shadow-sm">
                 <p className="text-2xl font-bold text-foreground">{(allGrades ?? []).length}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">إجمالي الدرجات</p>
+                <p className="text-xs text-muted-foreground mt-0.5">عدد الدرجات المسجلة</p>
               </div>
             </div>
           </div>
