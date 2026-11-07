@@ -39,7 +39,9 @@ router.post("/teachers", requireAuth, requireAdmin, async (req, res) => {
 });
 router.get("/teachers/:id", requireAuth, async (req, res) => {
   const user = (req as any).user as AuthUser;
-  const [row] = await db.select().from(teachersTable).where(and(eq(teachersTable.id, Number(req.params.id)), eq(teachersTable.schoolId, user.schoolId!))).limit(1);
+  const targetId = Number(req.params.id);
+  if (user.role === "teacher" && user.linkedId !== targetId) { res.status(403).json({ error: "يمكنك الاطلاع على ملفك فقط" }); return; }
+  const [row] = await db.select().from(teachersTable).where(and(eq(teachersTable.id, targetId), eq(teachersTable.schoolId, user.schoolId!))).limit(1);
   if (!row) { res.status(404).json({ error: "المعلم غير موجود" }); return; }
   res.json(row);
 });
