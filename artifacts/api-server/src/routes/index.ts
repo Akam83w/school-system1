@@ -11,6 +11,8 @@ import gradesRouter from "./grades";
 import dashboardRouter from "./dashboard";
 import auditLogsRouter from "./audit-logs";
 import announcementsRouter from "./announcements";
+import portalRouter from "./portal";
+import messagesRouter from "./messages";
 import academicYearsRouter from "./academic-years";
 import { requireAuth } from "../middlewares/auth";
 import { logger } from "../lib/logger";
