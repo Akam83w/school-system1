@@ -4,10 +4,10 @@ import { and, eq, or, desc, isNull, gte } from "drizzle-orm";
 import { requireAuth, type AuthUser } from "../middlewares/auth";
 
 const router = Router();
-router.use(requireAuth, (req, res, next) => {
+router.use(requireAuth, (req, res, next): void => {
   const user = (req as any).user as AuthUser;
-  if (!["student", "parent"].includes(user.role)) return res.status(403).json({ error: "هذه الصفحة مخصصة لحساب الطالب أو ولي الأمر" });
-  if (!user.linkedId || !user.schoolId) return res.status(403).json({ error: "الحساب غير مرتبط بطالب؛ راجع إدارة المدرسة" });
+  if (!["student", "parent"].includes(user.role)) { res.status(403).json({ error: "هذه الصفحة مخصصة لحساب الطالب أو ولي الأمر" }); return; }
+  if (!user.linkedId || !user.schoolId) { res.status(403).json({ error: "الحساب غير مرتبط بطالب؛ راجع إدارة المدرسة" }); return; }
   next();
 });
 
@@ -22,14 +22,14 @@ async function linkedStudent(user: AuthUser) {
   return student;
 }
 
-router.get("/portal/profile", async (req, res) => {
+router.get("/portal/profile", async (req, res): Promise<any> => {
   const user = (req as any).user as AuthUser;
   const student = await linkedStudent(user);
   if (!student) return res.status(404).json({ error: "ملف الطالب المرتبط بالحساب غير موجود" });
   res.json(student);
 });
 
-router.get("/portal/attendance", async (req, res) => {
+router.get("/portal/attendance", async (req, res): Promise<any> => {
   const user = (req as any).user as AuthUser;
   const rows = await db.select({
     id: attendanceTable.id, date: attendanceTable.date, status: attendanceTable.status,
@@ -40,7 +40,7 @@ router.get("/portal/attendance", async (req, res) => {
   res.json(rows);
 });
 
-router.get("/portal/grades", async (req, res) => {
+router.get("/portal/grades", async (req, res): Promise<any> => {
   const user = (req as any).user as AuthUser;
   const rows = await db.select({
     id: gradesTable.id, subjectName: subjectsTable.name, score: gradesTable.score,
@@ -53,7 +53,7 @@ router.get("/portal/grades", async (req, res) => {
   res.json(rows.map(r => ({ ...r, subjectName: r.subjectName ?? "", score: Number(r.score), maxScore: Number(r.maxScore) })));
 });
 
-router.get("/portal/behavior", async (req, res) => {
+router.get("/portal/behavior", async (req, res): Promise<any> => {
   const user = (req as any).user as AuthUser;
   const rows = await db.select({
     id: schoolMessagesTable.id, title: schoolMessagesTable.title, body: schoolMessagesTable.body,
@@ -66,7 +66,7 @@ router.get("/portal/behavior", async (req, res) => {
   res.json(rows);
 });
 
-router.get("/portal/notifications", async (req, res) => {
+router.get("/portal/notifications", async (req, res): Promise<any> => {
   const user = (req as any).user as AuthUser;
   const student = await linkedStudent(user);
   if (!student) return res.status(404).json({ error: "ملف الطالب غير موجود" });
@@ -95,7 +95,7 @@ router.get("/portal/notifications", async (req, res) => {
   });
 });
 
-router.get("/portal/conversation", async (req, res) => {
+router.get("/portal/conversation", async (req, res): Promise<any> => {
   const user = (req as any).user as AuthUser;
   const rows = await db.select({
     id: schoolMessagesTable.id, title: schoolMessagesTable.title, body: schoolMessagesTable.body,
