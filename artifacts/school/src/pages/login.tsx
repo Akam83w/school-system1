@@ -34,6 +34,14 @@ const ROLE_CONFIG: Record<
     demoId: "",
     demoNote: "أدخل اسم المستخدم وكلمة المرور اللذين حددهما مدير النظام.",
   },
+  parent: {
+    label: "ولي أمر",
+    icon: "👨‍👩‍👧",
+    identifierLabel: "اسم المستخدم",
+    placeholder: "أدخل اسم المستخدم الذي أنشأه المدير",
+    demoId: "",
+    demoNote: "أدخل اسم المستخدم وكلمة المرور اللذين حددهما مدير المدرسة.",
+  },
   student: {
     label: "طالب",
     icon: "👨‍🎓",
