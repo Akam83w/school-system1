@@ -44,7 +44,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { data: me } = useGetMe();
   const { isOnline, pendingCount, isSyncing } = useNetworkStatus();
 
-  const role = (me as any)?.role ?? "admin";\n  const visibleNavItems = navItems.filter(item => {\n    if (["/audit-logs", "/users", "/message-audit"].includes(item.href)) return role === "admin";\n    if (item.href === "/messages") return ["admin", "teacher"].includes(role);\n    return true;\n  });\n  const currentName = (me as any)?.name ?? "مدير النظام";
+  const role = (me as any)?.role ?? "admin";
+  const visibleNavItems = navItems.filter(item => {
+    if (["/audit-logs", "/users", "/message-audit"].includes(item.href)) return role === "admin";
+    if (item.href === "/messages") return ["admin", "teacher"].includes(role);
+    return true;
+  });
+  const currentName = (me as any)?.name ?? "مدير النظام";
   const initials = "مد";
 
   useEffect(() => {
