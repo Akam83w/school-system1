@@ -2,6 +2,7 @@ import { useState, Fragment } from "react";
 import { Layout } from "@/components/layout";
 import { getToken } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
+import { useGetMe } from "@workspace/api-client-react";
 
 type AuditLog = {
   id: number;
@@ -43,6 +44,7 @@ async function fetchAuditLogs(action?: string, entity?: string): Promise<AuditLo
 }
 
 export default function AuditLogsPage() {
+  const { data: me, isLoading: meLoading } = useGetMe();
   const [filterAction, setFilterAction] = useState("");
   const [filterEntity, setFilterEntity] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -51,6 +53,9 @@ export default function AuditLogsPage() {
     queryKey: ["audit-logs", filterAction, filterEntity],
     queryFn: () => fetchAuditLogs(filterAction || undefined, filterEntity || undefined),
   });
+
+  if (meLoading) return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">جاري التحقق من الصلاحيات...</div>;
+  if ((me as any)?.role !== "admin") return <Layout><div dir="rtl" className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm font-bold text-amber-800">هذه الصفحة للمدير فقط</div></Layout>;
 
   const selectCls = "px-3 py-2.5 rounded-lg border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors";
 
