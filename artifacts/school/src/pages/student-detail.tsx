@@ -212,7 +212,7 @@ export default function StudentDetailPage({ id }: { id: number | string }) {
                   onClick={() => setYearFilter(y)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${yearFilter === y ? "bg-primary text-white shadow-sm" : "bg-muted/50 text-muted-foreground hover:bg-muted"}`}
                 >
-                  {y}
+                  <bdi dir="ltr" className="whitespace-nowrap">{y}</bdi>
                 </button>
               ))}
             </div>
