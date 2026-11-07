@@ -5,6 +5,7 @@ import { requireAuth, type AuthUser } from "../middlewares/auth";
 
 const router = Router();
 router.use(requireAuth, (req, res, next): void => {
+  if (!req.path.startsWith("/portal/")) { next(); return; }
   const user = (req as any).user as AuthUser;
   if (!["student", "parent"].includes(user.role)) { res.status(403).json({ error: "هذه الصفحة مخصصة لحساب الطالب أو ولي الأمر" }); return; }
   if (!user.linkedId || !user.schoolId) { res.status(403).json({ error: "الحساب غير مرتبط بطالب؛ راجع إدارة المدرسة" }); return; }
